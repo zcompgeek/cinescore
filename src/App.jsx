@@ -939,11 +939,17 @@ const HostView = ({ gameId, user }) => {
           <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-y-auto w-full">
              
              {/* Dynamic Background Art */}
-             {game?.currentSong?.coverArt && (
+             {/* Only show art if revealed or game over. Otherwise show spoiler-free gradient */}
+             {(game?.status === 'revealed' || game?.status === 'game_over') && game?.currentSong?.coverArt ? (
                 <div 
                   className="absolute inset-0 bg-cover bg-center opacity-20 blur-xl transition-all duration-1000"
                   style={{ backgroundImage: `url(${game.currentSong.coverArt})`}}
                 />
+             ) : (
+                <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+                    <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600 rounded-full blur-[100px] animate-pulse"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-600 rounded-full blur-[100px] animate-pulse"></div>
+                </div>
              )}
 
              <div className="z-10 w-full max-w-4xl text-center">
