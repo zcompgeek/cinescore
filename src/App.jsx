@@ -902,6 +902,9 @@ const HostView = ({ gameId, user }) => {
       });
       setShowSettings(true);
   };
+  
+  // Helper to get player details
+  const getPlayer = (uid) => players.find(p => p.id === uid);
 
   if (showSettings) {
     return (
@@ -944,19 +947,29 @@ const HostView = ({ gameId, user }) => {
           </div>
 
           <div className="pt-4 border-t border-slate-700 mt-6">
-            <h3 className="font-bold mb-2 flex items-center gap-2"><Users size={18}/> Players Joined ({players.length})</h3>
-            <ul className="space-y-1 max-h-32 overflow-y-auto">
+            <h3 className="font-bold mb-4 flex items-center gap-2"><Users size={18}/> Players Joined ({players.length})</h3>
+            
+            {/* FUN PLAYER GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
               {players.map(p => (
-                <li key={p.id} className="text-sm bg-slate-700/50 px-2 py-1 rounded flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    {p.avatar && <img src={p.avatar} alt="icon" className="w-6 h-6 rounded-full border border-slate-500" />}
-                    <span>{p.username}</span>
+                <div key={p.id} className="bg-slate-700/50 p-3 rounded-xl flex items-center gap-3 border border-slate-600">
+                  <div className="relative">
+                    {p.avatar ? (
+                        <img src={p.avatar} alt={p.username} className="w-10 h-10 rounded-full bg-slate-800 border-2 border-blue-400 object-cover" />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-500 flex items-center justify-center">
+                            <span className="text-xs font-bold">{p.username.charAt(0)}</span>
+                        </div>
+                    )}
                   </div>
-                  <span className="font-mono text-blue-300">{p.score}</span>
-                </li>
+                  <div className="overflow-hidden">
+                      <div className="font-bold truncate text-sm">{p.username}</div>
+                      <div className="text-xs text-blue-300 font-mono">{p.score} pts</div>
+                  </div>
+                </div>
               ))}
-              {players.length === 0 && <li className="text-slate-500 italic text-sm">Waiting for players...</li>}
-            </ul>
+              {players.length === 0 && <div className="col-span-full text-slate-500 italic text-center py-4">Waiting for players to join...</div>}
+            </div>
           </div>
 
           <button 
@@ -972,6 +985,8 @@ const HostView = ({ gameId, user }) => {
   }
 
   // PLAYING STATE
+  const buzzerPlayer = game?.buzzerWinner ? getPlayer(game.buzzerWinner.uid) : null;
+
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col h-screen overflow-hidden">
        <audio ref={audioRef} loop />
@@ -1024,7 +1039,7 @@ const HostView = ({ gameId, user }) => {
                    {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
                        <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
-                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4" />}
+                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
                            <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
                            <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
                            <div className="text-xl md:text-2xl mb-6 md:mb-8">
@@ -1055,7 +1070,11 @@ const HostView = ({ gameId, user }) => {
 
                    {game?.buzzerWinner && game?.status !== 'revealed' && (
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short">
-                        <AlertCircle size={48} className="mb-4 md:w-16 md:h-16" />
+                        {buzzerPlayer?.avatar ? (
+                            <img src={buzzerPlayer.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-400 mb-4 bg-slate-800 shadow-xl object-cover" />
+                        ) : (
+                            <AlertCircle size={48} className="mb-4 md:w-16 md:h-16" />
+                        )}
                         <h2 className="text-3xl md:text-4xl font-black">{game.buzzerWinner.username} BUZZED!</h2>
                         <p className="text-white mt-2 text-lg">Waiting for answer...</p>
                         {game.currentAnswer && <p className="mt-4 bg-slate-800 px-4 py-2 rounded">Processing: "{game.currentAnswer}"</p>}
@@ -1071,10 +1090,15 @@ const HostView = ({ gameId, user }) => {
                            <p className="text-slate-500 text-sm md:text-base">{game.currentSong.artist}</p>
                         </div>
                         
-                        <div className={`p-4 rounded-xl font-bold text-lg md:text-xl mb-6 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
-                           {game.lastRoundScore > 0 
-                             ? `+${game.lastRoundScore} Points to ${game.buzzerWinner?.username || 'Winner'}` 
-                             : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : (game.feedbackMessage?.includes("Everyone") ? "Everyone Missed!" : "Time's Up!"))}
+                        <div className={`p-4 rounded-xl font-bold text-lg md:text-xl mb-6 flex flex-col items-center gap-2 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
+                           {buzzerPlayer?.avatar && (
+                               <img src={buzzerPlayer.avatar} className="w-12 h-12 rounded-full border-2 border-current bg-slate-800 object-cover" />
+                           )}
+                           <span>
+                               {game.lastRoundScore > 0 
+                                 ? `+${game.lastRoundScore} Points to ${game.buzzerWinner?.username || 'Winner'}` 
+                                 : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : (game.feedbackMessage?.includes("Everyone") ? "Everyone Missed!" : "Time's Up!"))}
+                           </span>
                         </div>
                         {/* Display error reason if score is 0 and there's an error message */}
                         {game.lastRoundScore === 0 && verification?.reason && verification.reason.includes("Error") && (
@@ -1100,11 +1124,15 @@ const HostView = ({ gameId, user }) => {
              </h3>
              <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1 pb-2">
                {players.map((p, idx) => (
-                 <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
+                 <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg transition-all ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30 scale-[1.02]' : 'bg-slate-800'}`}>
                     <div className="flex items-center gap-3">
                        <span className={`font-mono font-bold w-6 text-center ${idx===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{idx+1}</span>
                        <div className="flex items-center gap-2 overflow-hidden">
-                           {p.avatar && <img src={p.avatar} className="w-6 h-6 rounded-full border border-slate-500 shrink-0" />}
+                           {p.avatar ? (
+                               <img src={p.avatar} className="w-8 h-8 rounded-full border border-slate-500 shrink-0 bg-slate-700 object-cover" />
+                           ) : (
+                               <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">{p.username.charAt(0)}</div>
+                           )}
                            <span className="font-semibold text-sm md:text-base truncate max-w-[120px]">{p.username}</span>
                        </div>
                     </div>
@@ -1216,7 +1244,7 @@ const PlayerView = ({ gameId, user, username }) => {
                    <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-sm">
                        <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Winner</div>
                        <div className="flex flex-col items-center mb-6">
-                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-16 h-16 rounded-full border-2 border-yellow-500 mb-2" />}
+                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-16 h-16 rounded-full border-2 border-yellow-500 mb-2 object-cover bg-slate-800" />}
                            <div className="text-2xl md:text-3xl font-bold text-yellow-500">{game.winner?.username}</div>
                        </div>
                        
@@ -1326,7 +1354,7 @@ const PlayerView = ({ gameId, user, username }) => {
        {/* Player HUD */}
        <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10 shrink-0">
            <div className="flex items-center gap-2">
-               {myAvatar && <img src={myAvatar} className="w-10 h-10 rounded-full border border-slate-500" />}
+               {myAvatar && <img src={myAvatar} className="w-10 h-10 rounded-full border border-slate-500 object-cover bg-slate-700" />}
                <div>
                    <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
                    <div className="text-xl font-black text-blue-400">{myScore}</div>
