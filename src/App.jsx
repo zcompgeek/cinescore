@@ -225,6 +225,58 @@ const CATEGORIES = {
     { title: "Adventure Time", artist: "Pendleton Ward", movie: "Adventure Time" },
     { title: "Rick and Morty Theme", artist: "Ryan Elder", movie: "Rick and Morty" }
   ],
+  classic_tv: [ // 20-50 Years Ago (70s, 80s, 90s)
+    { title: "I'll Be There for You", artist: "The Rembrandts", movie: "Friends" },
+    { title: "Seinfeld Theme", artist: "Jonathan Wolff", movie: "Seinfeld" },
+    { title: "Where Everybody Knows Your Name", artist: "Gary Portnoy", movie: "Cheers" },
+    { title: "Thank You for Being a Friend", artist: "Cynthia Fee", movie: "The Golden Girls" },
+    { title: "Everywhere You Look", artist: "Jesse Frederick", movie: "Full House" },
+    { title: "Fresh Prince of Bel-Air", artist: "Will Smith", movie: "The Fresh Prince of Bel-Air" },
+    { title: "Saved by the Bell", artist: "Michael Damian", movie: "Saved by the Bell" },
+    { title: "The Simpsons Theme", artist: "Danny Elfman", movie: "The Simpsons" },
+    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files" },
+    { title: "Twin Peaks Theme", artist: "Angelo Badalamenti", movie: "Twin Peaks" },
+    { title: "Law & Order", artist: "Mike Post", movie: "Law & Order" },
+    { title: "Suicide Is Painless", artist: "Johnny Mandel", movie: "M*A*S*H" },
+    { title: "Angela", artist: "Bob James", movie: "Taxi" },
+    { title: "Movin' On Up", artist: "Ja'net Dubois", movie: "The Jeffersons" },
+    { title: "Good Times", artist: "Jim Gilstrap", movie: "Good Times" },
+    { title: "Sanford and Son Theme", artist: "Quincy Jones", movie: "Sanford and Son" },
+    { title: "Those Were the Days", artist: "Carroll O'Connor", movie: "All in the Family" },
+    { title: "Love is All Around", artist: "Sonny Curtis", movie: "The Mary Tyler Moore Show" },
+    { title: "Happy Days", artist: "Pratt & McClain", movie: "Happy Days" },
+    { title: "Making Our Dreams Come True", artist: "Cyndi Grecco", movie: "Laverne & Shirley" },
+    { title: "Come and Knock on Our Door", artist: "Ray Charles", movie: "Three's Company" },
+    { title: "It Takes Diff'rent Strokes", artist: "Alan Thicke", movie: "Diff'rent Strokes" },
+    { title: "Facts of Life", artist: "Gloria Loring", movie: "The Facts of Life" },
+    { title: "As Long As We Got Each Other", artist: "B.J. Thomas", movie: "Growing Pains" },
+    { title: "Without Us", artist: "Johnny Mathis", movie: "Family Ties" },
+    { title: "Believe It or Not", artist: "Joey Scarbury", movie: "The Greatest American Hero" },
+    { title: "Theme from Magnum P.I.", artist: "Mike Post", movie: "Magnum, P.I." },
+    { title: "Miami Vice Theme", artist: "Jan Hammer", movie: "Miami Vice" },
+    { title: "Knight Rider Theme", artist: "Stu Phillips", movie: "Knight Rider" },
+    { title: "The A-Team Theme", artist: "Mike Post", movie: "The A-Team" },
+    { title: "MacGyver Theme", artist: "Randy Edelman", movie: "MacGyver" },
+    { title: "Hawaii Five-O", artist: "The Ventures", movie: "Hawaii Five-O" },
+    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible (TV)" },
+    { title: "Batman Theme", artist: "Neal Hefti", movie: "Batman (1966)" },
+    { title: "The Brady Bunch", artist: "Peppermint Trolley Company", movie: "The Brady Bunch" },
+    { title: "The Addams Family", artist: "Vic Mizzy", movie: "The Addams Family" },
+    { title: "The Munsters", artist: "Jack Marshall", movie: "The Munsters" },
+    { title: "I Dream of Jeannie", artist: "Hugo Montenegro", movie: "I Dream of Jeannie" },
+    { title: "Bewitched", artist: "Howard Greenfield", movie: "Bewitched" },
+    { title: "Gilligan's Island", artist: "The Wellingtons", movie: "Gilligan's Island" },
+    { title: "Scooby-Doo, Where Are You!", artist: "Larry Marks", movie: "Scooby-Doo" },
+    { title: "The Flintstones", artist: "Hoyt Curtin", movie: "The Flintstones" },
+    { title: "The Jetsons", artist: "Hoyt Curtin", movie: "The Jetsons" },
+    { title: "DuckTales Theme", artist: "Jeff Pescetto", movie: "DuckTales" },
+    { title: "Teenage Mutant Ninja Turtles", artist: "Chuck Lorre", movie: "Teenage Mutant Ninja Turtles" },
+    { title: "Pokemon Theme", artist: "Jason Paige", movie: "Pokemon" },
+    { title: "Mighty Morphin Power Rangers", artist: "Ron Wasserman", movie: "Power Rangers" },
+    { title: "Baywatch Theme", artist: "Jimi Jamison", movie: "Baywatch" },
+    { title: "Bad Boys", artist: "Inner Circle", movie: "Cops" },
+    { title: "In the Street", artist: "Cheap Trick", movie: "That '70s Show" }
+  ],
   scifi: [
     { title: "Main Title", artist: "John Williams", movie: "Star Wars: A New Hope" },
     { title: "The Imperial March", artist: "John Williams", movie: "Star Wars: The Empire Strikes Back" },
@@ -380,6 +432,58 @@ const CATEGORIES = {
     { title: "Spider-Man", artist: "Paul Francis Webster", movie: "Spider-Man: Into the Spider-Verse" },
     { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
     { title: "What's Up Danger", artist: "Blackway", movie: "Spider-Man: Into the Spider-Verse" }
+  ],
+  horror: [
+    { title: "Halloween Theme", artist: "John Carpenter", movie: "Halloween" },
+    { title: "Tubular Bells", artist: "Mike Oldfield", movie: "The Exorcist" },
+    { title: "Psycho Prelude", artist: "Bernard Herrmann", movie: "Psycho" },
+    { title: "Jaws Theme", artist: "John Williams", movie: "Jaws" },
+    { title: "Ave Satani", artist: "Jerry Goldsmith", movie: "The Omen" },
+    { title: "Suspiria", artist: "Goblin", movie: "Suspiria" },
+    { title: "Rosemary's Baby", artist: "Krzysztof Komeda", movie: "Rosemary's Baby" },
+    { title: "The Shining Theme", artist: "Wendy Carlos", movie: "The Shining" },
+    { title: "A Nightmare on Elm Street", artist: "Charles Bernstein", movie: "A Nightmare on Elm Street" },
+    { title: "Friday the 13th", artist: "Harry Manfredini", movie: "Friday the 13th" },
+    { title: "Hello Zepp", artist: "Charlie Clouser", movie: "Saw" },
+    { title: "Candyman", artist: "Philip Glass", movie: "Candyman" },
+    { title: "Hellraiser", artist: "Christopher Young", movie: "Hellraiser" },
+    { title: "Phantasm", artist: "Fred Myrow", movie: "Phantasm" },
+    { title: "The Fog", artist: "John Carpenter", movie: "The Fog" },
+    { title: "The Thing", artist: "Ennio Morricone", movie: "The Thing" },
+    { title: "Escape from New York", artist: "John Carpenter", movie: "Escape from New York" },
+    { title: "Assault on Precinct 13", artist: "John Carpenter", movie: "Assault on Precinct 13" },
+    { title: "In the Mouth of Madness", artist: "John Carpenter", movie: "In the Mouth of Madness" },
+    { title: "Prince of Darkness", artist: "John Carpenter", movie: "Prince of Darkness" },
+    { title: "Village of the Damned", artist: "John Carpenter", movie: "Village of the Damned" },
+    { title: "Christine", artist: "John Carpenter", movie: "Christine" },
+    { title: "Pet Sematary", artist: "Ramones", movie: "Pet Sematary" },
+    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
+    { title: "Beetlejuice", artist: "Danny Elfman", movie: "Beetlejuice" },
+    { title: "Tales from the Crypt", artist: "Danny Elfman", movie: "Tales from the Crypt" },
+    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files" },
+    { title: "Twin Peaks", artist: "Angelo Badalamenti", movie: "Twin Peaks" },
+    { title: "Stranger Things", artist: "Kyle Dixon", movie: "Stranger Things" },
+    { title: "It Follows", artist: "Disasterpeace", movie: "It Follows" },
+    { title: "Hereditary", artist: "Colin Stetson", movie: "Hereditary" },
+    { title: "Midsommar", artist: "Bobby Krlic", movie: "Midsommar" },
+    { title: "The Witch", artist: "Mark Korven", movie: "The Witch" },
+    { title: "Us", artist: "Michael Abels", movie: "Us" },
+    { title: "Get Out", artist: "Michael Abels", movie: "Get Out" },
+    { title: "Nope", artist: "Michael Abels", movie: "Nope" },
+    { title: "A Quiet Place", artist: "Marco Beltrami", movie: "A Quiet Place" },
+    { title: "Bird Box", artist: "Trent Reznor", movie: "Bird Box" },
+    { title: "28 Days Later", artist: "John Murphy", movie: "28 Days Later" },
+    { title: "In the House - In a Heartbeat", artist: "John Murphy", movie: "28 Days Later" },
+    { title: "Resident Evil", artist: "Marilyn Manson", movie: "Resident Evil" },
+    { title: "Silent Hill", artist: "Akira Yamaoka", movie: "Silent Hill" },
+    { title: "The Ring", artist: "Hans Zimmer", movie: "The Ring" },
+    { title: "The Grudge", artist: "Christopher Young", movie: "The Grudge" },
+    { title: "Insidious", artist: "Joseph Bishara", movie: "Insidious" },
+    { title: "Sinister", artist: "Christopher Young", movie: "Sinister" },
+    { title: "The Conjuring", artist: "Joseph Bishara", movie: "The Conjuring" },
+    { title: "Annabelle", artist: "Joseph Bishara", movie: "Annabelle" },
+    { title: "The Nun", artist: "Abel Korzeniowski", movie: "The Nun" },
+    { title: "Scream", artist: "Marco Beltrami", movie: "Scream" }
   ]
 };
 
@@ -646,6 +750,15 @@ const HostView = ({ gameId, user }) => {
   const startGame = async () => {
     setShowSettings(false);
     
+    // Pick first song explicitly here to avoid stale state issues in nextRound
+    const allSongs = CATEGORIES[category];
+    const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
+    
+    // Fetch audio url for first song
+    const itunesData = await searchItunes(`${trackData.title} ${trackData.artist} soundtrack`);
+    const previewUrl = itunesData?.previewUrl || null;
+    const coverArt = itunesData?.artworkUrl100?.replace('100x100', '600x600') || null;
+
     // Reset all player scores
     const batch = writeBatch(db);
     players.forEach(p => {
@@ -657,21 +770,20 @@ const HostView = ({ gameId, user }) => {
     const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
     batch.update(gameRef, {
       status: 'playing',
-      round: 0,
+      round: 1, // Start directly at round 1
       totalRounds: totalRounds,
-      playedSongs: [], // Track history
+      playedSongs: [trackData.title], // Initialize history
       skips: [],
       winner: null,
       buzzerWinner: null,
       currentAnswer: null,
       answerVerified: false,
-      currentSong: null,
+      currentSong: { ...trackData, previewUrl, coverArt },
       attemptedThisRound: [],
       feedbackMessage: null
     });
     
     await batch.commit();
-    nextRound();
   };
 
   const nextRound = async () => {
