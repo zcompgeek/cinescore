@@ -18,7 +18,7 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Trash2, PenTool } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -432,58 +432,6 @@ const CATEGORIES = {
     { title: "Spider-Man", artist: "Paul Francis Webster", movie: "Spider-Man: Into the Spider-Verse" },
     { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
     { title: "What's Up Danger", artist: "Blackway", movie: "Spider-Man: Into the Spider-Verse" }
-  ],
-  horror: [
-    { title: "Halloween Theme", artist: "John Carpenter", movie: "Halloween" },
-    { title: "Tubular Bells", artist: "Mike Oldfield", movie: "The Exorcist" },
-    { title: "Psycho Prelude", artist: "Bernard Herrmann", movie: "Psycho" },
-    { title: "Jaws Theme", artist: "John Williams", movie: "Jaws" },
-    { title: "Ave Satani", artist: "Jerry Goldsmith", movie: "The Omen" },
-    { title: "Suspiria", artist: "Goblin", movie: "Suspiria" },
-    { title: "Rosemary's Baby", artist: "Krzysztof Komeda", movie: "Rosemary's Baby" },
-    { title: "The Shining Theme", artist: "Wendy Carlos", movie: "The Shining" },
-    { title: "A Nightmare on Elm Street", artist: "Charles Bernstein", movie: "A Nightmare on Elm Street" },
-    { title: "Friday the 13th", artist: "Harry Manfredini", movie: "Friday the 13th" },
-    { title: "Hello Zepp", artist: "Charlie Clouser", movie: "Saw" },
-    { title: "Candyman", artist: "Philip Glass", movie: "Candyman" },
-    { title: "Hellraiser", artist: "Christopher Young", movie: "Hellraiser" },
-    { title: "Phantasm", artist: "Fred Myrow", movie: "Phantasm" },
-    { title: "The Fog", artist: "John Carpenter", movie: "The Fog" },
-    { title: "The Thing", artist: "Ennio Morricone", movie: "The Thing" },
-    { title: "Escape from New York", artist: "John Carpenter", movie: "Escape from New York" },
-    { title: "Assault on Precinct 13", artist: "John Carpenter", movie: "Assault on Precinct 13" },
-    { title: "In the Mouth of Madness", artist: "John Carpenter", movie: "In the Mouth of Madness" },
-    { title: "Prince of Darkness", artist: "John Carpenter", movie: "Prince of Darkness" },
-    { title: "Village of the Damned", artist: "John Carpenter", movie: "Village of the Damned" },
-    { title: "Christine", artist: "John Carpenter", movie: "Christine" },
-    { title: "Pet Sematary", artist: "Ramones", movie: "Pet Sematary" },
-    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
-    { title: "Beetlejuice", artist: "Danny Elfman", movie: "Beetlejuice" },
-    { title: "Tales from the Crypt", artist: "Danny Elfman", movie: "Tales from the Crypt" },
-    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files" },
-    { title: "Twin Peaks", artist: "Angelo Badalamenti", movie: "Twin Peaks" },
-    { title: "Stranger Things", artist: "Kyle Dixon", movie: "Stranger Things" },
-    { title: "It Follows", artist: "Disasterpeace", movie: "It Follows" },
-    { title: "Hereditary", artist: "Colin Stetson", movie: "Hereditary" },
-    { title: "Midsommar", artist: "Bobby Krlic", movie: "Midsommar" },
-    { title: "The Witch", artist: "Mark Korven", movie: "The Witch" },
-    { title: "Us", artist: "Michael Abels", movie: "Us" },
-    { title: "Get Out", artist: "Michael Abels", movie: "Get Out" },
-    { title: "Nope", artist: "Michael Abels", movie: "Nope" },
-    { title: "A Quiet Place", artist: "Marco Beltrami", movie: "A Quiet Place" },
-    { title: "Bird Box", artist: "Trent Reznor", movie: "Bird Box" },
-    { title: "28 Days Later", artist: "John Murphy", movie: "28 Days Later" },
-    { title: "In the House - In a Heartbeat", artist: "John Murphy", movie: "28 Days Later" },
-    { title: "Resident Evil", artist: "Marilyn Manson", movie: "Resident Evil" },
-    { title: "Silent Hill", artist: "Akira Yamaoka", movie: "Silent Hill" },
-    { title: "The Ring", artist: "Hans Zimmer", movie: "The Ring" },
-    { title: "The Grudge", artist: "Christopher Young", movie: "The Grudge" },
-    { title: "Insidious", artist: "Joseph Bishara", movie: "Insidious" },
-    { title: "Sinister", artist: "Christopher Young", movie: "Sinister" },
-    { title: "The Conjuring", artist: "Joseph Bishara", movie: "The Conjuring" },
-    { title: "Annabelle", artist: "Joseph Bishara", movie: "Annabelle" },
-    { title: "The Nun", artist: "Abel Korzeniowski", movie: "The Nun" },
-    { title: "Scream", artist: "Marco Beltrami", movie: "Scream" }
   ]
 };
 
@@ -553,12 +501,114 @@ const searchItunes = async (query) => {
   }
 };
 
+// --- DRAWING COMPONENT ---
+const DrawingPad = ({ onSave }) => {
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    // Set fixed resolution but display via CSS width/height
+    canvas.width = 300; 
+    canvas.height = 300;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.fillStyle = '#1e293b'; // Slate 800 background
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  const getCoordinates = (event) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    let clientX, clientY;
+    
+    if (event.touches) {
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
+    } else {
+      clientX = event.clientX;
+      clientY = event.clientY;
+    }
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  };
+
+  const startDrawing = (e) => {
+    e.preventDefault(); // Prevent scrolling on touch
+    const { x, y } = getCoordinates(e);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const { x, y } = getCoordinates(e);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      const canvas = canvasRef.current;
+      onSave(canvas.toDataURL());
+    }
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    onSave(null);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative border-2 border-slate-600 rounded-lg overflow-hidden touch-none">
+        <canvas
+          ref={canvasRef}
+          style={{ width: '100%', maxWidth: '300px', height: 'auto', aspectRatio: '1/1' }}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+        />
+        <button 
+           onClick={(e) => { e.preventDefault(); clearCanvas(); }}
+           className="absolute top-2 right-2 p-2 bg-red-600/80 rounded hover:bg-red-500 text-white"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+      <p className="text-xs text-slate-400 flex items-center gap-1"><PenTool size={12}/> Draw your icon!</p>
+    </div>
+  );
+};
+
 // --- COMPONENTS ---
 
 // 1. LANDING SCREEN
 const Landing = ({ setMode, joinGame }) => {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState(null);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -599,6 +649,9 @@ const Landing = ({ setMode, joinGame }) => {
               value={name}
               onChange={e => setName(e.target.value)}
             />
+            
+            <DrawingPad onSave={setAvatar} />
+
             <input 
               type="text" 
               placeholder="GAME CODE (e.g. ABCD)"
@@ -609,7 +662,7 @@ const Landing = ({ setMode, joinGame }) => {
             />
             <button 
               disabled={!name || code.length !== 4}
-              onClick={() => joinGame(code, name)}
+              onClick={() => joinGame(code, name, avatar)}
               className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors"
             >
               Enter Game
@@ -741,7 +794,7 @@ const HostView = ({ gameId, user }) => {
       if (game?.status === 'revealed') {
           timer = setTimeout(() => {
               nextRound();
-          }, 3000);
+          }, 6000);
       }
       return () => clearTimeout(timer);
   }, [game?.status]);
@@ -796,7 +849,7 @@ const HostView = ({ gameId, user }) => {
         
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: 'game_over',
-            winner: winner ? { uid: winner.id, username: winner.username, score: winner.score } : null
+            winner: winner ? { uid: winner.id, username: winner.username, score: winner.score, avatar: winner.avatar } : null
         });
         return;
     }
@@ -894,8 +947,11 @@ const HostView = ({ gameId, user }) => {
             <h3 className="font-bold mb-2 flex items-center gap-2"><Users size={18}/> Players Joined ({players.length})</h3>
             <ul className="space-y-1 max-h-32 overflow-y-auto">
               {players.map(p => (
-                <li key={p.id} className="text-sm bg-slate-700/50 px-2 py-1 rounded flex justify-between">
-                  <span>{p.username}</span>
+                <li key={p.id} className="text-sm bg-slate-700/50 px-2 py-1 rounded flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {p.avatar && <img src={p.avatar} alt="icon" className="w-6 h-6 rounded-full border border-slate-500" />}
+                    <span>{p.username}</span>
+                  </div>
                   <span className="font-mono text-blue-300">{p.score}</span>
                 </li>
               ))}
@@ -968,6 +1024,7 @@ const HostView = ({ gameId, user }) => {
                    {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
                        <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
+                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4" />}
                            <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
                            <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
                            <div className="text-xl md:text-2xl mb-6 md:mb-8">
@@ -1046,7 +1103,10 @@ const HostView = ({ gameId, user }) => {
                  <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
                     <div className="flex items-center gap-3">
                        <span className={`font-mono font-bold w-6 text-center ${idx===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{idx+1}</span>
-                       <span className="font-semibold text-sm md:text-base truncate max-w-[120px]">{p.username}</span>
+                       <div className="flex items-center gap-2 overflow-hidden">
+                           {p.avatar && <img src={p.avatar} className="w-6 h-6 rounded-full border border-slate-500 shrink-0" />}
+                           <span className="font-semibold text-sm md:text-base truncate max-w-[120px]">{p.username}</span>
+                       </div>
                     </div>
                     <span className="font-bold text-blue-400 text-sm md:text-base">{p.score}</span>
                  </div>
@@ -1062,6 +1122,7 @@ const HostView = ({ gameId, user }) => {
 const PlayerView = ({ gameId, user, username }) => {
   const [game, setGame] = useState(null);
   const [myScore, setMyScore] = useState(0);
+  const [myAvatar, setMyAvatar] = useState(null);
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
 
@@ -1080,7 +1141,11 @@ const PlayerView = ({ gameId, user, username }) => {
 
     // My Score Listener
     const unsubPlayer = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', user.uid), (snap) => {
-        if (snap.exists()) setMyScore(snap.data().score);
+        if (snap.exists()) {
+            const data = snap.data();
+            setMyScore(data.score);
+            setMyAvatar(data.avatar);
+        }
     });
 
     return () => { unsubGame(); unsubPlayer(); };
@@ -1150,7 +1215,10 @@ const PlayerView = ({ gameId, user, username }) => {
                    <h1 className="text-3xl md:text-4xl font-black mb-4 text-slate-500">GAME OVER</h1>
                    <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-sm">
                        <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Winner</div>
-                       <div className="text-2xl md:text-3xl font-bold text-yellow-500 mb-6">{game.winner?.username}</div>
+                       <div className="flex flex-col items-center mb-6">
+                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-16 h-16 rounded-full border-2 border-yellow-500 mb-2" />}
+                           <div className="text-2xl md:text-3xl font-bold text-yellow-500">{game.winner?.username}</div>
+                       </div>
                        
                        <div className="border-t border-slate-700 pt-6">
                            <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Your Score</div>
@@ -1257,9 +1325,12 @@ const PlayerView = ({ gameId, user, username }) => {
     <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative h-screen">
        {/* Player HUD */}
        <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10 shrink-0">
-           <div>
-               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
-               <div className="text-xl font-black text-blue-400">{myScore}</div>
+           <div className="flex items-center gap-2">
+               {myAvatar && <img src={myAvatar} className="w-10 h-10 rounded-full border border-slate-500" />}
+               <div>
+                   <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
+                   <div className="text-xl font-black text-blue-400">{myScore}</div>
+               </div>
            </div>
            <div className="text-center">
                <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Room</div>
@@ -1338,7 +1409,7 @@ export default function App() {
     setGameId(newCode);
   };
 
-  const handleJoinGame = async (code, name) => {
+  const handleJoinGame = async (code, name, avatar) => {
     if (!user) return;
     const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', code);
     const snap = await getDoc(gameRef);
@@ -1349,7 +1420,8 @@ export default function App() {
       await setDoc(playerRef, {
         username: name,
         score: 0,
-        joinedAt: new Date()
+        joinedAt: new Date(),
+        avatar: avatar || null
       });
       setGameId(code);
       setUsername(name);
