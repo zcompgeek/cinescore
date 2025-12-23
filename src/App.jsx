@@ -1244,12 +1244,16 @@ const HostView = ({ gameId, user }) => {
                    )}
 
                    {game?.status === 'revealed' && (
-                     <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm">
-                        <div className="mb-6">
-                           <img src={game.currentSong.coverArt} className="w-32 h-32 md:w-48 md:h-48 object-cover rounded mx-auto shadow-lg mb-4" />
-                           <h2 className="text-xl md:text-2xl font-bold text-white">{game.currentSong.movie}</h2>
-                           <p className="text-blue-400 text-base md:text-lg">{game.currentSong.title}</p>
-                           <p className="text-slate-500 text-sm md:text-base">{game.currentSong.artist}</p>
+                     <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm w-full max-w-5xl">
+                        <div className="mb-6 flex flex-col items-center">
+                           <img 
+                             src={game.currentSong.coverArt} 
+                             className="max-h-[65vh] w-auto max-w-full object-contain rounded-lg shadow-2xl mb-6" 
+                             alt="Movie Poster"
+                           />
+                           <h2 className="text-3xl md:text-5xl font-black text-white text-center leading-tight mb-2">{game.currentSong.movie}</h2>
+                           <p className="text-blue-400 text-xl md:text-2xl font-bold">{game.currentSong.title}</p>
+                           <p className="text-slate-500 text-lg">{game.currentSong.artist}</p>
                         </div>
                         
                         <div className={`p-4 rounded-xl font-bold text-lg md:text-xl mb-6 flex flex-col items-center gap-2 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
@@ -1269,9 +1273,9 @@ const HostView = ({ gameId, user }) => {
 
                         <button 
                           onClick={nextRound}
-                          className="px-6 py-3 md:px-8 md:py-3 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto"
+                          className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto text-xl shadow-lg"
                         >
-                          Next Round <SkipForward size={20}/>
+                          Next Round <SkipForward size={24}/>
                         </button>
                      </div>
                    )}
@@ -1540,9 +1544,12 @@ const PlayerView = ({ gameId, user, username }) => {
     const winnerText = game.lastRoundScore > 0 ? "Correct!" : "Wrong!";
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
-         <div className="mb-6 relative">
-            <img src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="w-48 h-48 md:w-64 md:h-64 rounded-xl shadow-2xl" />
-            <div className="absolute -bottom-4 -right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg font-bold">
+         <div className="mb-6 relative w-full flex justify-center">
+            <img 
+                src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} 
+                className="max-h-[50vh] w-auto max-w-full rounded-xl shadow-2xl object-contain" 
+            />
+            <div className="absolute -bottom-4 bg-blue-600 text-white p-3 rounded-full shadow-lg font-bold">
                {game.lastRoundScore > 0 ? <Check size={24}/> : <X size={24}/>}
             </div>
          </div>
