@@ -225,58 +225,6 @@ const CATEGORIES = {
     { title: "Adventure Time", artist: "Pendleton Ward", movie: "Adventure Time" },
     { title: "Rick and Morty Theme", artist: "Ryan Elder", movie: "Rick and Morty" }
   ],
-  classic_tv: [ // 20-50 Years Ago (70s, 80s, 90s)
-    { title: "I'll Be There for You", artist: "The Rembrandts", movie: "Friends" },
-    { title: "Seinfeld Theme", artist: "Jonathan Wolff", movie: "Seinfeld" },
-    { title: "Where Everybody Knows Your Name", artist: "Gary Portnoy", movie: "Cheers" },
-    { title: "Thank You for Being a Friend", artist: "Cynthia Fee", movie: "The Golden Girls" },
-    { title: "Everywhere You Look", artist: "Jesse Frederick", movie: "Full House" },
-    { title: "Fresh Prince of Bel-Air", artist: "Will Smith", movie: "The Fresh Prince of Bel-Air" },
-    { title: "Saved by the Bell", artist: "Michael Damian", movie: "Saved by the Bell" },
-    { title: "The Simpsons Theme", artist: "Danny Elfman", movie: "The Simpsons" },
-    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files" },
-    { title: "Twin Peaks Theme", artist: "Angelo Badalamenti", movie: "Twin Peaks" },
-    { title: "Law & Order", artist: "Mike Post", movie: "Law & Order" },
-    { title: "Suicide Is Painless", artist: "Johnny Mandel", movie: "M*A*S*H" },
-    { title: "Angela", artist: "Bob James", movie: "Taxi" },
-    { title: "Movin' On Up", artist: "Ja'net Dubois", movie: "The Jeffersons" },
-    { title: "Good Times", artist: "Jim Gilstrap", movie: "Good Times" },
-    { title: "Sanford and Son Theme", artist: "Quincy Jones", movie: "Sanford and Son" },
-    { title: "Those Were the Days", artist: "Carroll O'Connor", movie: "All in the Family" },
-    { title: "Love is All Around", artist: "Sonny Curtis", movie: "The Mary Tyler Moore Show" },
-    { title: "Happy Days", artist: "Pratt & McClain", movie: "Happy Days" },
-    { title: "Making Our Dreams Come True", artist: "Cyndi Grecco", movie: "Laverne & Shirley" },
-    { title: "Come and Knock on Our Door", artist: "Ray Charles", movie: "Three's Company" },
-    { title: "It Takes Diff'rent Strokes", artist: "Alan Thicke", movie: "Diff'rent Strokes" },
-    { title: "Facts of Life", artist: "Gloria Loring", movie: "The Facts of Life" },
-    { title: "As Long As We Got Each Other", artist: "B.J. Thomas", movie: "Growing Pains" },
-    { title: "Without Us", artist: "Johnny Mathis", movie: "Family Ties" },
-    { title: "Believe It or Not", artist: "Joey Scarbury", movie: "The Greatest American Hero" },
-    { title: "Theme from Magnum P.I.", artist: "Mike Post", movie: "Magnum, P.I." },
-    { title: "Miami Vice Theme", artist: "Jan Hammer", movie: "Miami Vice" },
-    { title: "Knight Rider Theme", artist: "Stu Phillips", movie: "Knight Rider" },
-    { title: "The A-Team Theme", artist: "Mike Post", movie: "The A-Team" },
-    { title: "MacGyver Theme", artist: "Randy Edelman", movie: "MacGyver" },
-    { title: "Hawaii Five-O", artist: "The Ventures", movie: "Hawaii Five-O" },
-    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible (TV)" },
-    { title: "Batman Theme", artist: "Neal Hefti", movie: "Batman (1966)" },
-    { title: "The Brady Bunch", artist: "Peppermint Trolley Company", movie: "The Brady Bunch" },
-    { title: "The Addams Family", artist: "Vic Mizzy", movie: "The Addams Family" },
-    { title: "The Munsters", artist: "Jack Marshall", movie: "The Munsters" },
-    { title: "I Dream of Jeannie", artist: "Hugo Montenegro", movie: "I Dream of Jeannie" },
-    { title: "Bewitched", artist: "Howard Greenfield", movie: "Bewitched" },
-    { title: "Gilligan's Island", artist: "The Wellingtons", movie: "Gilligan's Island" },
-    { title: "Scooby-Doo, Where Are You!", artist: "Larry Marks", movie: "Scooby-Doo" },
-    { title: "The Flintstones", artist: "Hoyt Curtin", movie: "The Flintstones" },
-    { title: "The Jetsons", artist: "Hoyt Curtin", movie: "The Jetsons" },
-    { title: "DuckTales Theme", artist: "Jeff Pescetto", movie: "DuckTales" },
-    { title: "Teenage Mutant Ninja Turtles", artist: "Chuck Lorre", movie: "Teenage Mutant Ninja Turtles" },
-    { title: "Pokemon Theme", artist: "Jason Paige", movie: "Pokemon" },
-    { title: "Mighty Morphin Power Rangers", artist: "Ron Wasserman", movie: "Power Rangers" },
-    { title: "Baywatch Theme", artist: "Jimi Jamison", movie: "Baywatch" },
-    { title: "Bad Boys", artist: "Inner Circle", movie: "Cops" },
-    { title: "In the Street", artist: "Cheap Trick", movie: "That '70s Show" }
-  ],
   scifi: [
     { title: "Main Title", artist: "John Williams", movie: "Star Wars: A New Hope" },
     { title: "The Imperial March", artist: "John Williams", movie: "Star Wars: The Empire Strikes Back" },
@@ -515,7 +463,7 @@ const Landing = ({ setMode, joinGame }) => {
         <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-600 rounded-full blur-[100px]"></div>
       </div>
 
-      <div className="z-10 text-center w-full max-w-5xl mx-auto">
+      <div className="z-10 text-center w-full max-w-4xl mx-auto">
         <div className="mb-8 flex justify-center">
           <div className="bg-gradient-to-tr from-purple-500 to-blue-500 p-4 rounded-2xl shadow-2xl">
             <Music size={48} className="text-white" />
@@ -526,7 +474,7 @@ const Landing = ({ setMode, joinGame }) => {
         </h1>
         <p className="text-slate-400 mb-8 text-lg">The Ultimate Soundtrack Trivia</p>
 
-        <div className="space-y-4 max-w-md mx-auto">
+        <div className="space-y-4 max-w-lg mx-auto w-full">
           <button 
             onClick={() => setMode('host')}
             className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
@@ -539,7 +487,7 @@ const Landing = ({ setMode, joinGame }) => {
             <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900 text-slate-500">OR JOIN EXISTING</span></div>
           </div>
 
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-3">
+          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-3 w-full">
             <input 
               type="text" 
               placeholder="YOUR NAME"
@@ -1125,7 +1073,7 @@ const PlayerView = ({ gameId, user, username }) => {
     return (
       <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
         <h1 className="text-3xl md:text-4xl font-black text-white mb-8 animate-bounce">YOU'RE UP!</h1>
-        <div className="w-full max-w-2xl space-y-4">
+        <div className="w-full max-w-4xl space-y-4">
            {!hasAnswered ? (
              <>
                <input 
@@ -1213,7 +1161,7 @@ const PlayerView = ({ gameId, user, username }) => {
            </div>
        )}
        
-       <div className="flex-1 flex flex-col items-center justify-center relative p-4">
+       <div className="flex-1 flex flex-col items-center justify-center relative p-4 w-full max-w-full">
           <button 
              onClick={buzzIn}
              className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
