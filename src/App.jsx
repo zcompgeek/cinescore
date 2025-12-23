@@ -19,7 +19,7 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -28,7 +28,8 @@ const getEnvironmentConfig = () => {
     return {
       firebaseConfig: JSON.parse(__firebase_config),
       appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
-      geminiKey: "" 
+      geminiKey: "",
+      tmdbAccessToken: "" // Preview env doesn't support TMDB
     };
   }
 
@@ -46,7 +47,8 @@ const getEnvironmentConfig = () => {
           appId: import.meta.env.VITE_FIREBASE_APP_ID
         },
         appId: "cinescore-prod",
-        geminiKey: import.meta.env.VITE_GEMINI_API_KEY || ""
+        geminiKey: import.meta.env.VITE_GEMINI_API_KEY || "",
+        tmdbAccessToken: import.meta.env.VITE_TMDB_ACCESS_TOKEN || ""
       };
     }
   } catch (e) {}
@@ -62,11 +64,12 @@ const getEnvironmentConfig = () => {
       appId: "REPLACE_WITH_APP_ID"
     },
     appId: "cinescore-manual",
-    geminiKey: "REPLACE_WITH_GEMINI_KEY"
+    geminiKey: "REPLACE_WITH_GEMINI_KEY",
+    tmdbAccessToken: "REPLACE_WITH_TMDB_READ_ACCESS_TOKEN"
   };
 };
 
-const { firebaseConfig, appId, geminiKey: initialGeminiKey } = getEnvironmentConfig();
+const { firebaseConfig, appId, geminiKey: initialGeminiKey, tmdbAccessToken } = getEnvironmentConfig();
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -508,11 +511,22 @@ const searchItunes = async (query) => {
 
 // Search iTunes for Movie Poster (to get film art instead of album art)
 const searchMoviePoster = async (query) => {
+  if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) return null;
   try {
-    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=movie&limit=1`);
+    const res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${tmdbAccessToken}`
+      }
+    });
     const data = await res.json();
-    return data.results[0]?.artworkUrl100?.replace('100x100', '600x600') || null;
+    if (data.results && data.results.length > 0 && data.results[0].poster_path) {
+        return `https://image.tmdb.org/t/p/w780${data.results[0].poster_path}`;
+    }
+    return null;
   } catch (e) {
+    console.error("TMDB Search failed", e);
     return null;
   }
 };
@@ -613,7 +627,7 @@ const DrawingPad = ({ onSave }) => {
           <X size={16} />
         </button>
       </div>
-      <p className="text-xs text-slate-400 flex items-center gap-1">Draw your icon!</p>
+      <p className="text-xs text-slate-400 flex items-center gap-1"><PenTool size={12}/> Draw your icon!</p>
     </div>
   );
 };
@@ -841,19 +855,6 @@ const HostView = ({ gameId, user }) => {
   const startGame = async () => {
     setShowSettings(false);
     
-    // Pick first song explicitly here to avoid stale state issues in nextRound
-    const allSongs = CATEGORIES[category];
-    const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
-    
-    // Fetch audio url for first song
-    const [musicData, posterUrl] = await Promise.all([
-        searchItunes(`${trackData.title} ${trackData.artist} soundtrack`),
-        searchMoviePoster(trackData.movie)
-    ]);
-
-    const previewUrl = musicData?.previewUrl || null;
-    const coverArt = posterUrl || musicData?.artworkUrl100?.replace('100x100', '600x600') || null;
-
     // Reset all player scores
     const batch = writeBatch(db);
     players.forEach(p => {
@@ -861,41 +862,37 @@ const HostView = ({ gameId, user }) => {
         batch.update(pRef, { score: 0 });
     });
     
-    // Update Game State
+    // Initial Game State
     const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-    batch.update(gameRef, {
+    await batch.commit();
+
+    // Trigger first round logic (reusing nextRound logic essentially, but we need to ensure state is set first)
+    // We will just call nextRound which handles fetching and setting the song
+    await setDoc(gameRef, {
+      hostId: user.uid,
       status: 'playing',
-      round: 1, // Start directly at round 1
+      round: 0, // nextRound will increment this to 1
       totalRounds: totalRounds,
-      playedSongs: [], // Initialize history to empty array
+      playedSongs: [], 
       skips: [],
       winner: null,
       buzzerWinner: null,
       currentAnswer: null,
       answerVerified: false,
-      currentSong: { ...trackData, previewUrl, coverArt },
+      currentSong: null,
       attemptedThisRound: [],
       feedbackMessage: null
-    });
-    
-    // Add first song to playedSongs immediately so it shows in history
-    batch.update(gameRef, {
-        playedSongs: arrayUnion({
-            title: trackData.title,
-            artist: trackData.artist,
-            movie: trackData.movie,
-            coverArt: coverArt
-        })
-    });
-    
-    await batch.commit();
+    }, { merge: true });
+
+    nextRound();
   };
 
   const nextRound = async () => {
     setVerification(null);
     
-    // Check if Game Over
-    if (game?.round >= game?.totalRounds) {
+    // Check if Game Over (fetch fresh state if possible, but local state 'game' is usually reliable enough here)
+    // We increment round at the end of this function, so if current round == total, we are done.
+    if (game?.round >= totalRounds) {
         // Calculate winner
         const winner = players.length > 0 ? players[0] : null; 
         
@@ -913,11 +910,6 @@ const HostView = ({ gameId, user }) => {
     const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
     let availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
 
-    if (availableSongs.length === 0) {
-        alert("Ran out of unique songs in this category!");
-        return;
-    }
-    
     let selectedSong = null;
     let attempts = 0;
     const MAX_ATTEMPTS = 5;
@@ -950,9 +942,8 @@ const HostView = ({ gameId, user }) => {
     }
 
     if (!selectedSong) {
-        // Fallback if loop fails
-        const fallback = availableSongs[0];
-        selectedSong = { ...fallback, previewUrl: null, coverArt: null }; 
+        alert("Error: Could not find a valid song with audio/image after multiple attempts. Please try another category or restart.");
+        return;
     }
 
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
@@ -1156,7 +1147,7 @@ const HostView = ({ gameId, user }) => {
                                  onClick={() => setShowHistory(false)}
                                  className="mt-6 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
                                >
-                                 Back to Results
+                                 <ArrowLeft size={20} /> Back to Results
                                </button>
                            </div>
                        ) : (
@@ -1387,7 +1378,7 @@ const PlayerView = ({ gameId, user, username }) => {
                      onClick={() => setShowHistory(false)}
                      className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
                    >
-                     Back
+                     <ArrowLeft size={20} /> Back
                    </button>
                </div>
            );
