@@ -511,22 +511,45 @@ const searchItunes = async (query) => {
 
 // Search iTunes for Movie Poster (to get film art instead of album art)
 const searchMoviePoster = async (query) => {
-  if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) return null;
+  console.log(`[TMDB] Searching for: "${query}"`); // Log query
+
+  if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) {
+      console.warn("[TMDB] No access token provided or placeholder used.");
+      return null;
+  }
+  
   try {
-    const res = await fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`, {
+    const url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`;
+    const res = await fetch(url, {
       method: 'GET',
       headers: {
         accept: 'application/json',
         Authorization: `Bearer ${tmdbAccessToken}`
       }
     });
+
+    if (!res.ok) {
+        console.error(`[TMDB] API Error: ${res.status} ${res.statusText}`);
+        return null;
+    }
+
     const data = await res.json();
-    if (data.results && data.results.length > 0 && data.results[0].poster_path) {
-        return `https://image.tmdb.org/t/p/w780${data.results[0].poster_path}`;
+    
+    if (data.results && data.results.length > 0) {
+        const firstResult = data.results[0];
+        if (firstResult.poster_path) {
+             const posterUrl = `https://image.tmdb.org/t/p/w780${firstResult.poster_path}`;
+             console.log(`[TMDB] Found poster for "${query}": ${posterUrl}`);
+             return posterUrl;
+        } else {
+            console.log(`[TMDB] Movie found for "${query}" but no poster_path available.`);
+        }
+    } else {
+        console.log(`[TMDB] No results found for "${query}".`);
     }
     return null;
   } catch (e) {
-    console.error("TMDB Search failed", e);
+    console.error("[TMDB] Exception during search:", e);
     return null;
   }
 };
@@ -855,6 +878,21 @@ const HostView = ({ gameId, user }) => {
   const startGame = async () => {
     setShowSettings(false);
     
+    // Pick first song explicitly here to avoid stale state issues in nextRound
+    const allSongs = CATEGORIES[category];
+    const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
+    
+    // Fetch audio url for first song
+    // Fetch Music and Poster in parallel
+    const [musicData, posterUrl] = await Promise.all([
+        searchItunes(`${trackData.title} ${trackData.artist} soundtrack`),
+        searchMoviePoster(trackData.movie)
+    ]);
+
+    const previewUrl = musicData?.previewUrl || null;
+    // Prefer movie poster, fallback to album art. Always upscale.
+    const coverArt = posterUrl || musicData?.artworkUrl100?.replace('100x100', '600x600') || null;
+
     // Reset all player scores
     const batch = writeBatch(db);
     players.forEach(p => {
@@ -1562,7 +1600,7 @@ const PlayerView = ({ gameId, user, username }) => {
              onClick={buzzIn}
              className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
           >
-             <span className="text-5xl md:text-7xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
+             <span className="text-5xl md:text-7xl font-black text-red-100 group-hover:text-white transition-colors">BUZZ</span>
           </button>
           <p className="mt-8 text-slate-400 font-medium animate-pulse text-center">Wait for the music...</p>
        </div>
