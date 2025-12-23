@@ -19,7 +19,7 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, History, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -333,110 +333,6 @@ const CATEGORIES = {
     { title: "Logan", artist: "Marco Beltrami", movie: "Logan" },
     { title: "Deadpool Rap", artist: "Teamheadkick", movie: "Deadpool" },
     { title: "Venom", artist: "Eminem", movie: "Venom" }
-  ],
-  action: [
-    { title: "He's a Pirate", artist: "Klaus Badelt", movie: "Pirates of the Caribbean: The Curse of the Black Pearl" },
-    { title: "Theme from Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible" },
-    { title: "Raiders March", artist: "John Williams", movie: "Indiana Jones and the Raiders of the Lost Ark" },
-    { title: "James Bond Theme", artist: "Monty Norman", movie: "Dr. No" },
-    { title: "Gladiator Theme", artist: "Hans Zimmer", movie: "Gladiator" },
-    { title: "Now We Are Free", artist: "Hans Zimmer", movie: "Gladiator" },
-    { title: "Mombasa", artist: "Hans Zimmer", movie: "Inception" },
-    { title: "The Dark Knight", artist: "Hans Zimmer", movie: "The Dark Knight" },
-    { title: "Molossus", artist: "Hans Zimmer", movie: "Batman Begins" },
-    { title: "Why So Serious?", artist: "Hans Zimmer", movie: "The Dark Knight" },
-    { title: "Braveheart Theme", artist: "James Horner", movie: "Braveheart" },
-    { title: "Last of the Mohicans", artist: "Trevor Jones", movie: "The Last of the Mohicans" },
-    { title: "Top Gun Anthem", artist: "Harold Faltermeyer", movie: "Top Gun" },
-    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun" },
-    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III" },
-    { title: "Gonna Fly Now", artist: "Bill Conti", movie: "Rocky" },
-    { title: "Training Montage", artist: "Vince DiCola", movie: "Rocky IV" },
-    { title: "Conan the Barbarian", artist: "Basil Poledouris", movie: "Conan the Barbarian" },
-    { title: "Robocop Theme", artist: "Basil Poledouris", movie: "RoboCop" },
-    { title: "Predator Theme", artist: "Alan Silvestri", movie: "Predator" },
-    { title: "Die Hard", artist: "Michael Kamen", movie: "Die Hard" },
-    { title: "Lethal Weapon", artist: "Michael Kamen", movie: "Lethal Weapon" },
-    { title: "Speed Title", artist: "Mark Mancina", movie: "Speed" },
-    { title: "The Rock", artist: "Hans Zimmer", movie: "The Rock" },
-    { title: "Face/Off", artist: "John Powell", movie: "Face/Off" },
-    { title: "Con Air", artist: "Mark Mancina", movie: "Con Air" },
-    { title: "Armageddon", artist: "Trevor Rabin", movie: "Armageddon" },
-    { title: "Independence Day", artist: "David Arnold", movie: "Independence Day" },
-    { title: "Air Force One", artist: "Jerry Goldsmith", movie: "Air Force One" },
-    { title: "The Mummy", artist: "Jerry Goldsmith", movie: "The Mummy" },
-    { title: "National Treasure", artist: "Trevor Rabin", movie: "National Treasure" },
-    { title: "Bourne Identity", artist: "John Powell", movie: "The Bourne Identity" },
-    { title: "Extreme Ways", artist: "Moby", movie: "The Bourne Identity" },
-    { title: "Casino Royale", artist: "David Arnold", movie: "Casino Royale" },
-    { title: "You Know My Name", artist: "Chris Cornell", movie: "Casino Royale" },
-    { title: "Skyfall", artist: "Adele", movie: "Skyfall" },
-    { title: "No Time To Die", artist: "Billie Eilish", movie: "No Time to Die" },
-    { title: "Writing's on the Wall", artist: "Sam Smith", movie: "Spectre" },
-    { title: "John Wick Mode", artist: "Le Castle Vania", movie: "John Wick" },
-    { title: "Kill Bill", artist: "Tomoyasu Hotei", movie: "Kill Bill: Vol. 1" },
-    { title: "Bang Bang", artist: "Nancy Sinatra", movie: "Kill Bill: Vol. 1" },
-    { title: "Misirlou", artist: "Dick Dale", movie: "Pulp Fiction" },
-    { title: "Mad Max Fury Road", artist: "Junkie XL", movie: "Mad Max: Fury Road" },
-    { title: "Brothers in Arms", artist: "Junkie XL", movie: "Mad Max: Fury Road" },
-    { title: "Wonder Woman", artist: "Hans Zimmer", movie: "Batman v Superman" },
-    { title: "300", artist: "Tyler Bates", movie: "300" },
-    { title: "Troy", artist: "James Horner", movie: "Troy" },
-    { title: "Kingdom of Heaven", artist: "Harry Gregson-Williams", movie: "Kingdom of Heaven" },
-    { title: "King Arthur", artist: "Hans Zimmer", movie: "King Arthur" },
-    { title: "Rush Hour", artist: "Lalo Schifrin", movie: "Rush Hour" }
-  ],
-  animation: [
-    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King" },
-    { title: "Under the Sea", artist: "Samuel E. Wright", movie: "The Little Mermaid" },
-    { title: "Part of Your World", artist: "Jodi Benson", movie: "The Little Mermaid" },
-    { title: "Beauty and the Beast", artist: "Angela Lansbury", movie: "Beauty and the Beast" },
-    { title: "Be Our Guest", artist: "Jerry Orbach", movie: "Beauty and the Beast" },
-    { title: "A Whole New World", artist: "Brad Kane", movie: "Aladdin" },
-    { title: "Friend Like Me", artist: "Robin Williams", movie: "Aladdin" },
-    { title: "Colors of the Wind", artist: "Judy Kuhn", movie: "Pocahontas" },
-    { title: "You've Got a Friend in Me", artist: "Randy Newman", movie: "Toy Story" },
-    { title: "When She Loved Me", artist: "Sarah McLachlan", movie: "Toy Story 2" },
-    { title: "Hakuna Matata", artist: "Nathan Lane", movie: "The Lion King" },
-    { title: "Can You Feel the Love Tonight", artist: "Elton John", movie: "The Lion King" },
-    { title: "Reflection", artist: "Lea Salonga", movie: "Mulan" },
-    { title: "I'll Make a Man Out of You", artist: "Donny Osmond", movie: "Mulan" },
-    { title: "Go the Distance", artist: "Roger Bart", movie: "Hercules" },
-    { title: "You'll Be in My Heart", artist: "Phil Collins", movie: "Tarzan" },
-    { title: "Let It Go", artist: "Idina Menzel", movie: "Frozen" },
-    { title: "Do You Want to Build a Snowman?", artist: "Kristen Bell", movie: "Frozen" },
-    { title: "Into the Unknown", artist: "Idina Menzel", movie: "Frozen II" },
-    { title: "How Far I'll Go", artist: "Auli'i Cravalho", movie: "Moana" },
-    { title: "You're Welcome", artist: "Dwayne Johnson", movie: "Moana" },
-    { title: "Remember Me", artist: "Benjamin Bratt", movie: "Coco" },
-    { title: "Un Poco Loco", artist: "Anthony Gonzalez", movie: "Coco" },
-    { title: "We Don't Talk About Bruno", artist: "Carolina Gaitan", movie: "Encanto" },
-    { title: "Surface Pressure", artist: "Jessica Darrow", movie: "Encanto" },
-    { title: "The Bare Necessities", artist: "Phil Harris", movie: "The Jungle Book" },
-    { title: "I Wan'na Be Like You", artist: "Louis Prima", movie: "The Jungle Book" },
-    { title: "Cruella De Vil", artist: "Bill Lee", movie: "101 Dalmatians" },
-    { title: "Bella Notte", artist: "George Givot", movie: "Lady and the Tramp" },
-    { title: "Once Upon a Dream", artist: "Mary Costa", movie: "Sleeping Beauty" },
-    { title: "Bibbidi-Bobbidi-Boo", artist: "Verna Felton", movie: "Cinderella" },
-    { title: "When You Wish Upon a Star", artist: "Cliff Edwards", movie: "Pinocchio" },
-    { title: "Whistle While You Work", artist: "Adriana Caselotti", movie: "Snow White and the Seven Dwarfs" },
-    { title: "Heigh-Ho", artist: "The Dwarfs", movie: "Snow White and the Seven Dwarfs" },
-    { title: "Married Life", artist: "Michael Giacchino", movie: "Up" },
-    { title: "Touch the Sky", artist: "Julie Fowlis", movie: "Brave" },
-    { title: "Le Festin", artist: "Camille", movie: "Ratatouille" },
-    { title: "Nemo Egg", artist: "Thomas Newman", movie: "Finding Nemo" },
-    { title: "The Incredibles", artist: "Michael Giacchino", movie: "The Incredibles" },
-    { title: "Monsters, Inc.", artist: "Randy Newman", movie: "Monsters, Inc." },
-    { title: "If I Didn't Have You", artist: "Billy Crystal", movie: "Monsters, Inc." },
-    { title: "Life is a Highway", artist: "Rascal Flatts", movie: "Cars" },
-    { title: "Real Gone", artist: "Sheryl Crow", movie: "Cars" },
-    { title: "Accidentally in Love", artist: "Counting Crows", movie: "Shrek 2" },
-    { title: "I'm a Believer", artist: "Smash Mouth", movie: "Shrek" },
-    { title: "All Star", artist: "Smash Mouth", movie: "Shrek" },
-    { title: "Everything Is Awesome", artist: "Tegan and Sara", movie: "The Lego Movie" },
-    { title: "Spider-Man", artist: "Paul Francis Webster", movie: "Spider-Man: Into the Spider-Verse" },
-    { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
-    { title: "What's Up Danger", artist: "Blackway", movie: "Spider-Man: Into the Spider-Verse" }
   ]
 };
 
@@ -599,10 +495,10 @@ const DrawingPad = ({ onSave }) => {
            onClick={(e) => { e.preventDefault(); clearCanvas(); }}
            className="absolute top-2 right-2 p-2 bg-red-600/80 rounded hover:bg-red-500 text-white"
         >
-          <Trash2 size={16} />
+          <X size={16} />
         </button>
       </div>
-      <p className="text-xs text-slate-400 flex items-center gap-1"><PenTool size={12}/> Draw your icon!</p>
+      <p className="text-xs text-slate-400 flex items-center gap-1">Draw your icon!</p>
     </div>
   );
 };
@@ -668,9 +564,9 @@ const Landing = ({ setMode, joinGame }) => {
                  <button 
                    disabled={!name || code.length !== 4}
                    onClick={() => setStep(2)}
-                   className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors"
+                   className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-2"
                  >
-                   Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" />
+                   Next: Draw Avatar
                  </button>
                </div>
              </>
@@ -1085,7 +981,7 @@ const HostView = ({ gameId, user }) => {
                    {game?.status === 'game_over' && (
                        showHistory ? (
                            <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-fade-in w-full h-[600px] flex flex-col">
-                               <h2 className="text-3xl font-bold mb-4 flex items-center gap-2 justify-center"><History /> Game History</h2>
+                               <h2 className="text-3xl font-bold mb-4 flex items-center gap-2 justify-center">Game History</h2>
                                <div className="flex-1 overflow-y-auto space-y-2 pr-2">
                                    {game.playedSongs && game.playedSongs.length > 0 ? (
                                        game.playedSongs.map((song, i) => (
@@ -1111,7 +1007,7 @@ const HostView = ({ gameId, user }) => {
                                  onClick={() => setShowHistory(false)}
                                  className="mt-6 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
                                >
-                                 <ArrowLeft size={20} /> Back to Results
+                                 Back to Results
                                </button>
                            </div>
                        ) : (
@@ -1190,4 +1086,459 @@ const HostView = ({ gameId, user }) => {
                         </div>
                         {/* Display error reason if score is 0 and there's an error message */}
                         {game.lastRoundScore === 0 && verification?.reason && verification.reason.includes("Error") && (
-                            <p className="text-red-300 text-sm mb-4 bg-red-900/50 p-2 rounded">{verification.reason}</
+                            <p className="text-red-300 text-sm mb-4 bg-red-900/50 p-2 rounded">{verification.reason}</p>
+                        )}
+
+                        <button 
+                          onClick={nextRound}
+                          className="px-6 py-3 md:px-8 md:py-3 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto"
+                        >
+                          Next Round <SkipForward size={20}/>
+                        </button>
+                     </div>
+                   )}
+                </div>
+             </div>
+          </div>
+
+          {/* Leaderboard Sidebar - Scrollable at bottom on mobile, side on desktop */}
+          <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 p-4 md:p-6 flex flex-col h-48 md:h-auto shrink-0">
+             <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-6 flex items-center gap-2 sticky top-0 bg-slate-900 z-10">
+               <Trophy className="text-yellow-500" size={20} /> Leaderboard
+             </h3>
+             <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1 pb-2 pr-1">
+               {players.map((p, idx) => (
+                 <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg transition-all ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                       <span className={`font-mono font-bold w-6 text-center shrink-0 ${idx===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{idx+1}</span>
+                       <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                           {p.avatar ? (
+                               <img src={p.avatar} className="w-8 h-8 rounded-full border border-slate-500 shrink-0 bg-slate-700 object-cover" />
+                           ) : (
+                               <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold shrink-0">{p.username.charAt(0)}</div>
+                           )}
+                           <span className="font-semibold text-sm md:text-base truncate">{p.username}</span>
+                       </div>
+                    </div>
+                    <span className="font-bold text-blue-400 text-sm md:text-base shrink-0">{p.score}</span>
+                 </div>
+               ))}
+             </div>
+          </div>
+       </div>
+    </div>
+  );
+};
+
+// 3. PLAYER SCREEN
+const PlayerView = ({ gameId, user, username }) => {
+  const [game, setGame] = useState(null);
+  const [myScore, setMyScore] = useState(0);
+  const [myAvatar, setMyAvatar] = useState(null);
+  const [answer, setAnswer] = useState("");
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // Player local history toggle
+
+  useEffect(() => {
+    // Game Listener
+    const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setGame(data);
+        if (data.status === 'playing' && !data.buzzerWinner && hasAnswered) {
+           setAnswer("");
+           setHasAnswered(false);
+        }
+        // If game resets to lobby, reset history view
+        if (data.status === 'lobby') setShowHistory(false);
+      }
+    });
+
+    // My Score Listener
+    const unsubPlayer = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', user.uid), (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            setMyScore(data.score);
+            setMyAvatar(data.avatar);
+        }
+    });
+
+    return () => { unsubGame(); unsubPlayer(); };
+  }, [gameId, hasAnswered, user.uid]);
+
+  const buzzIn = async () => {
+    if (!game || game.buzzerWinner || game.status !== 'playing') return;
+    
+    await runTransaction(db, async (transaction) => {
+      const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+      const sfDoc = await transaction.get(gameRef);
+      if (!sfDoc.exists()) return;
+      
+      const currentData = sfDoc.data();
+      if (!currentData.buzzerWinner) {
+        transaction.update(gameRef, { 
+          buzzerWinner: { uid: user.uid, username: username },
+          buzzerLocked: true 
+        });
+      }
+    });
+  };
+
+  const submitAnswer = async () => {
+    if (!answer.trim()) return;
+    setHasAnswered(true);
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+      currentAnswer: answer
+    });
+  };
+
+  const voteSkip = async () => {
+      if (game.skips?.includes(user.uid)) return; // Already voted
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+          skips: arrayUnion(user.uid)
+      });
+  };
+
+  // -- RENDER STATES --
+
+  if (!game) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
+
+  const isLockedOut = game.attemptedThisRound?.includes(user.uid);
+  const isMe = game.buzzerWinner?.uid === user.uid;
+  
+  // 1. GAME OVER - Victory or Defeat
+  if (game.status === 'game_over') {
+       // Check if user wants to see history
+       if (showHistory) {
+           return (
+               <div className="min-h-screen bg-slate-900 flex flex-col p-6 text-white">
+                   <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2">Song History</h2>
+                   <div className="flex-1 overflow-y-auto space-y-2 mb-4">
+                        {game.playedSongs && game.playedSongs.length > 0 ? (
+                           game.playedSongs.map((song, i) => (
+                               <div key={i} className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg">
+                                   {typeof song === 'object' ? (
+                                       <>
+                                           <img src={song.coverArt || "https://placehold.co/100"} className="w-12 h-12 rounded object-cover bg-slate-700" />
+                                           <div className="text-left overflow-hidden">
+                                               <div className="font-bold truncate text-sm text-white">{song.movie}</div>
+                                               <div className="text-xs text-slate-400 truncate">{song.title}</div>
+                                           </div>
+                                       </>
+                                   ) : (
+                                       <span className="text-slate-400">{song}</span>
+                                   )}
+                               </div>
+                           ))
+                        ) : (
+                           <div className="text-center text-slate-500 italic">No songs recorded.</div>
+                        )}
+                   </div>
+                   <button 
+                     onClick={() => setShowHistory(false)}
+                     className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
+                   >
+                     Back
+                   </button>
+               </div>
+           );
+       }
+
+       const isWinner = game.winner?.uid === user.uid;
+       if (isWinner) {
+           return (
+               <div className="min-h-screen bg-gradient-to-b from-yellow-600 to-yellow-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                   <Trophy size={80} className="text-yellow-200 mb-6 animate-bounce md:w-32 md:h-32" />
+                   <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-xl">VICTORY!</h1>
+                   <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl text-white">
+                       Final Score: {myScore}
+                   </div>
+                   
+                   {/* History Button for Winner */}
+                   <button 
+                     onClick={() => setShowHistory(true)}
+                     className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm text-white"
+                   >
+                     <History size={16}/> View Songs
+                   </button>
+
+                   <div className="mt-8 flex gap-2">
+                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
+                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
+                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
+                   </div>
+               </div>
+           );
+       } else {
+           return (
+               <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                   <h1 className="text-3xl md:text-4xl font-black mb-4 text-slate-500">GAME OVER</h1>
+                   <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-sm border border-slate-700">
+                       <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Winner</div>
+                       <div className="flex flex-col items-center mb-6">
+                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-16 h-16 rounded-full border-2 border-yellow-500 mb-2 object-cover bg-slate-800" />}
+                           <div className="text-2xl md:text-3xl font-bold text-yellow-500">{game.winner?.username}</div>
+                       </div>
+                       
+                       <div className="border-t border-slate-700 pt-6 mb-6">
+                           <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Your Score</div>
+                           <div className="text-2xl font-bold text-white">{myScore}</div>
+                       </div>
+
+                       <button 
+                         onClick={() => setShowHistory(true)}
+                         className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
+                       >
+                         <History size={18}/> View Song History
+                       </button>
+                   </div>
+                   <p className="mt-8 text-slate-500 animate-pulse">Waiting for host...</p>
+               </div>
+           );
+       }
+  }
+
+  // 2. Locked Out (Guessed Wrong already)
+  if (isLockedOut && !game.buzzerWinner && game.status === 'playing') {
+       return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+            <h1 className="text-2xl font-bold text-red-400 mb-2">Incorrect!</h1>
+            <p className="text-slate-400">You are locked out until the next song.</p>
+        </div>
+       );
+  }
+
+  // 3. Someone Else Buzzed
+  if (game.buzzerWinner && !isMe && game.status !== 'revealed') {
+    return (
+      <div className="min-h-screen bg-red-900/20 flex flex-col items-center justify-center p-6 text-center">
+         <div className="p-6 bg-red-600 rounded-full mb-6 animate-pulse">
+           <Smartphone size={48} className="text-white"/>
+         </div>
+         <h1 className="text-2xl md:text-3xl font-black text-white mb-2">{game.buzzerWinner.username} LOCKED IN!</h1>
+         <p className="text-red-200">Wait for the next song...</p>
+      </div>
+    );
+  }
+
+  // 4. I Buzzed! Input time.
+  if (isMe && game.status !== 'revealed') {
+    return (
+      <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
+        <h1 className="text-3xl md:text-4xl font-black text-white mb-8 animate-bounce">YOU'RE UP!</h1>
+        <div className="w-full max-w-4xl space-y-4">
+           {!hasAnswered ? (
+             <>
+               <input 
+                 autoFocus
+                 className="w-full bg-white p-4 rounded-xl text-black text-xl font-bold text-center uppercase placeholder:text-gray-500"
+                 placeholder="MOVIE TITLE?"
+                 value={answer}
+                 onChange={e => setAnswer(e.target.value)}
+                 onKeyDown={e => e.key === 'Enter' && submitAnswer()}
+               />
+               <div className="flex gap-2">
+                 <button 
+                  onClick={submitAnswer}
+                  className="flex-1 bg-white text-green-900 py-4 rounded-xl font-black text-xl shadow-xl active:scale-95 transition-transform"
+                 >
+                   SUBMIT
+                 </button>
+               </div>
+             </>
+           ) : (
+             <div className="text-white text-center text-xl font-bold animate-pulse">
+               Judging...
+             </div>
+           )}
+        </div>
+      </div>
+    );
+  }
+
+  // 5. Reveal / Result
+  if (game.status === 'revealed') {
+    const scoreText = game.lastRoundScore > 0 ? `+${game.lastRoundScore}` : "0";
+    const winnerText = game.lastRoundScore > 0 ? "Correct!" : "Wrong!";
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
+         <div className="mb-6 relative">
+            <img src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="w-48 h-48 md:w-64 md:h-64 rounded-xl shadow-2xl" />
+            <div className="absolute -bottom-4 -right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg font-bold">
+               {game.lastRoundScore > 0 ? <Check size={24}/> : <X size={24}/>}
+            </div>
+         </div>
+         <h2 className="text-2xl font-bold mb-1 text-white">{game.currentSong.movie}</h2>
+         <p className="text-slate-400 mb-8">{game.currentSong.title}</p>
+         
+         {isMe && (
+           <div className={`text-3xl md:text-4xl font-black ${game.lastRoundScore > 0 ? 'text-green-400' : 'text-red-400'}`}>
+             {winnerText} ({scoreText})
+           </div>
+         )}
+         {!isMe && game.buzzerWinner && (
+            <div className="text-xl text-slate-500">
+               {game.buzzerWinner.username} got {scoreText}
+            </div>
+         )}
+      </div>
+    );
+  }
+
+  // 6. Default Buzzer State
+  const votedSkip = game.skips?.includes(user.uid);
+  
+  return (
+    <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative h-screen">
+       {/* Player HUD */}
+       <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10 shrink-0">
+           <div className="flex items-center gap-2">
+               {myAvatar && <img src={myAvatar} className="w-10 h-10 rounded-full border border-slate-500 object-cover bg-slate-700" />}
+               <div>
+                   <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
+                   <div className="text-xl font-black text-blue-400">{myScore}</div>
+               </div>
+           </div>
+           <div className="text-center">
+               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Room</div>
+               <div className="font-mono text-lg text-white">{gameId}</div>
+           </div>
+           <div className="text-right">
+               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Song</div>
+               <div className="text-xl font-bold text-white">{game.round}/{game.totalRounds}</div>
+           </div>
+       </div>
+
+       {game.feedbackMessage && (
+           <div className="absolute top-20 left-0 right-0 p-4 flex justify-center z-50 animate-bounce-short">
+               <div className="bg-red-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm text-center">
+                   {game.feedbackMessage}
+               </div>
+           </div>
+       )}
+       
+       <div className="flex-1 flex flex-col items-center justify-center relative p-4 w-full max-w-full">
+          <button 
+             onClick={buzzIn}
+             className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
+          >
+             <span className="text-5xl md:text-7xl font-black text-red-100 group-hover:text-white transition-colors">BUZZ</span>
+          </button>
+          <p className="mt-8 text-slate-400 font-medium animate-pulse text-center">Wait for the music...</p>
+       </div>
+
+       {/* Bottom Actions */}
+       <div className="p-4 md:p-6 shrink-0 safe-area-bottom">
+           <button 
+             onClick={voteSkip}
+             disabled={votedSkip}
+             className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${votedSkip ? 'bg-slate-700 text-slate-500' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+           >
+               <FastForward size={20} />
+               {votedSkip ? "Voted to Skip" : "Vote to Skip Song"}
+           </button>
+       </div>
+    </div>
+  );
+};
+
+
+// 4. MAIN APP CONTROLLER
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [mode, setMode] = useState(null); // 'host' | 'player'
+  const [gameId, setGameId] = useState(null);
+  const [username, setUsername] = useState("");
+  const [authError, setAuthError] = useState(null);
+
+  // Auth Init
+  useEffect(() => {
+    if (firebaseConfig.apiKey === "REPLACE_WITH_YOUR_API_KEY") {
+        setAuthError("Configuration Missing: Please set up your Firebase keys in the code.");
+        return;
+    }
+
+    let mounted = true;
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+           await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+           await signInAnonymously(auth);
+        }
+      } catch (e) {
+        console.error("Auth failed", e);
+        if (mounted) setAuthError(e.message);
+      }
+    };
+    initAuth();
+    const unsub = onAuthStateChanged(auth, u => {
+        if (mounted) setUser(u);
+    });
+    return () => {
+        mounted = false;
+        unsub();
+    }
+  }, []);
+
+  const handleCreateGame = async () => {
+    if (!user) return;
+    const newCode = generateCode();
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', newCode);
+    
+    await setDoc(gameRef, {
+      hostId: user.uid,
+      status: 'lobby',
+      createdAt: new Date(),
+      round: 0,
+      buzzerWinner: null,
+      scores: {}
+    });
+    
+    setGameId(newCode);
+  };
+
+  const handleJoinGame = async (code, name, avatar) => {
+    if (!user) return;
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', code);
+    const snap = await getDoc(gameRef);
+    
+    if (snap.exists()) {
+      // Add player to subcollection
+      const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', code, 'players', user.uid);
+      await setDoc(playerRef, {
+        username: name,
+        score: 0,
+        joinedAt: new Date(),
+        avatar: avatar || null
+      });
+      setGameId(code);
+      setUsername(name);
+      setMode('player');
+    } else {
+      alert("Game not found!");
+    }
+  };
+
+  if (authError) return (
+      <div className="h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6 text-center">
+          <AlertCircle className="text-red-500 mb-4" size={48} />
+          <h2 className="text-2xl font-bold mb-2">Connection Error</h2>
+          <p className="text-slate-400 mb-4">{authError}</p>
+          <p className="text-sm text-slate-600">If running locally, check your firebaseConfig settings.</p>
+      </div>
+  );
+
+  if (!user) return <div className="h-screen bg-slate-950 flex items-center justify-center text-slate-500 animate-pulse">Connecting to CineScore...</div>;
+
+  if (mode === 'host' && gameId) return <HostView gameId={gameId} user={user} />;
+  if (mode === 'player' && gameId) return <PlayerView gameId={gameId} user={user} username={username} />;
+
+  // Initial State: user clicked "Host" but hasn't created game yet
+  if (mode === 'host' && !gameId) {
+    handleCreateGame(); // Auto create
+    return <div className="h-screen bg-slate-950 flex items-center justify-center text-white">Creating Room...</div>;
+  }
+
+  return <Landing setMode={setMode} joinGame={handleJoinGame} />;
+}
