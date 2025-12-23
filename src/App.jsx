@@ -18,10 +18,11 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Trash2, PenTool, History, ArrowLeft } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Trash2, PenTool, History, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
+  // 1. Preview Environment (Internal Use)
   if (typeof __firebase_config !== 'undefined') {
     return {
       firebaseConfig: JSON.parse(__firebase_config),
@@ -30,23 +31,7 @@ const getEnvironmentConfig = () => {
     };
   }
 
-  try {
-    if (import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
-      return {
-        firebaseConfig: {
-          apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-          appId: import.meta.env.VITE_FIREBASE_APP_ID
-        },
-        appId: "cinescore-prod",
-        geminiKey: import.meta.env.VITE_GEMINI_API_KEY || ""
-      };
-    }
-  } catch (e) {}
-
+  // 2. Fallback for Local/Prod
   return {
     firebaseConfig: {
       apiKey: "REPLACE_WITH_YOUR_API_KEY",
@@ -609,6 +594,7 @@ const Landing = ({ setMode, joinGame }) => {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(null);
+  const [step, setStep] = useState(1); // 1: Info, 2: Drawing
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -629,45 +615,65 @@ const Landing = ({ setMode, joinGame }) => {
         <p className="text-slate-400 mb-8 text-lg">The Ultimate Soundtrack Trivia</p>
 
         <div className="space-y-4 max-w-lg mx-auto w-full">
-          <button 
-            onClick={() => setMode('host')}
-            className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
-          >
-            Host a New Game
-          </button>
-          
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-700"></span></div>
-            <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900 text-slate-500">OR JOIN EXISTING</span></div>
-          </div>
+          {step === 1 ? (
+             <>
+               <button 
+                 onClick={() => setMode('host')}
+                 className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
+               >
+                 Host a New Game
+               </button>
+               
+               <div className="relative my-6">
+                 <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-700"></span></div>
+                 <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900 text-slate-500">OR JOIN EXISTING</span></div>
+               </div>
 
-          <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-3 w-full">
-            <input 
-              type="text" 
-              placeholder="YOUR NAME"
-              className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600"
-              value={name}
-              onChange={e => setName(e.target.value)}
-            />
-            
-            <DrawingPad onSave={setAvatar} />
-
-            <input 
-              type="text" 
-              placeholder="GAME CODE (e.g. ABCD)"
-              className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none uppercase placeholder:text-slate-600"
-              maxLength={4}
-              value={code}
-              onChange={e => setCode(e.target.value.toUpperCase())}
-            />
-            <button 
-              disabled={!name || code.length !== 4}
-              onClick={() => joinGame(code, name, avatar)}
-              className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors"
-            >
-              Enter Game
-            </button>
-          </div>
+               <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-3 w-full">
+                 <input 
+                   type="text" 
+                   placeholder="YOUR NAME"
+                   className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600"
+                   value={name}
+                   onChange={e => setName(e.target.value)}
+                 />
+                 <input 
+                   type="text" 
+                   placeholder="GAME CODE (e.g. ABCD)"
+                   className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none uppercase placeholder:text-slate-600"
+                   maxLength={4}
+                   value={code}
+                   onChange={e => setCode(e.target.value.toUpperCase())}
+                 />
+                 <button 
+                   disabled={!name || code.length !== 4}
+                   onClick={() => setStep(2)}
+                   className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors"
+                 >
+                   Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" />
+                 </button>
+               </div>
+             </>
+          ) : (
+             <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4 w-full">
+                 <h2 className="text-xl font-bold text-white">Draw Your Icon</h2>
+                 <DrawingPad onSave={setAvatar} />
+                 <div className="flex gap-2">
+                     <button 
+                        onClick={() => setStep(1)}
+                        className="flex-1 py-3 bg-slate-700 text-white rounded-lg font-bold hover:bg-slate-600 transition-colors"
+                     >
+                        Back
+                     </button>
+                     <button 
+                        onClick={() => joinGame(code, name, avatar)}
+                        className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-colors"
+                     >
+                        Join Game
+                     </button>
+                 </div>
+             </div>
+          )}
         </div>
       </div>
     </div>
@@ -826,7 +832,7 @@ const HostView = ({ gameId, user }) => {
       status: 'playing',
       round: 1, // Start directly at round 1
       totalRounds: totalRounds,
-      playedSongs: [], // Initialize history to empty array
+      playedSongs: [trackData.title], // Initialize history
       skips: [],
       winner: null,
       buzzerWinner: null,
@@ -1131,13 +1137,15 @@ const HostView = ({ gameId, user }) => {
                    {game?.buzzerWinner && game?.status !== 'revealed' && (
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short">
                         {buzzerPlayer?.avatar ? (
-                            <img src={buzzerPlayer.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-400 mb-4 bg-slate-800 shadow-xl object-cover" />
+                            <div className="mb-6 bg-slate-800 p-2 rounded-full shadow-2xl">
+                              <img src={buzzerPlayer.avatar} className="w-48 h-48 md:w-96 md:h-96 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
+                            </div>
                         ) : (
-                            <AlertCircle size={48} className="mb-4 md:w-16 md:h-16" />
+                            <AlertCircle size={80} className="mb-6 md:w-32 md:h-32" />
                         )}
-                        <h2 className="text-3xl md:text-4xl font-black">{game.buzzerWinner.username} BUZZED!</h2>
-                        <p className="text-white mt-2 text-lg">Waiting for answer...</p>
-                        {game.currentAnswer && <p className="mt-4 bg-slate-800 px-4 py-2 rounded">Processing: "{game.currentAnswer}"</p>}
+                        <h2 className="text-4xl md:text-6xl font-black mb-4">{game.buzzerWinner.username}</h2>
+                        <p className="text-white text-xl md:text-2xl animate-pulse">Is Guessing...</p>
+                        {game.currentAnswer && <p className="mt-6 bg-slate-800 px-6 py-3 rounded-xl text-xl">Processing: "{game.currentAnswer}"</p>}
                      </div>
                    )}
 
@@ -1182,21 +1190,21 @@ const HostView = ({ gameId, user }) => {
              <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-6 flex items-center gap-2 sticky top-0 bg-slate-900 z-10">
                <Trophy className="text-yellow-500" size={20} /> Leaderboard
              </h3>
-             <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1 pb-2">
+             <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1 pb-2 pr-1">
                {players.map((p, idx) => (
-                 <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg transition-all ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30 scale-[1.02]' : 'bg-slate-800'}`}>
-                    <div className="flex items-center gap-3">
-                       <span className={`font-mono font-bold w-6 text-center ${idx===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{idx+1}</span>
-                       <div className="flex items-center gap-2 overflow-hidden">
+                 <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg transition-all ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                       <span className={`font-mono font-bold w-6 text-center shrink-0 ${idx===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{idx+1}</span>
+                       <div className="flex items-center gap-2 overflow-hidden min-w-0">
                            {p.avatar ? (
                                <img src={p.avatar} className="w-8 h-8 rounded-full border border-slate-500 shrink-0 bg-slate-700 object-cover" />
                            ) : (
-                               <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">{p.username.charAt(0)}</div>
+                               <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold shrink-0">{p.username.charAt(0)}</div>
                            )}
-                           <span className="font-semibold text-sm md:text-base truncate max-w-[120px]">{p.username}</span>
+                           <span className="font-semibold text-sm md:text-base truncate">{p.username}</span>
                        </div>
                     </div>
-                    <span className="font-bold text-blue-400 text-sm md:text-base">{p.score}</span>
+                    <span className="font-bold text-blue-400 text-sm md:text-base shrink-0">{p.score}</span>
                  </div>
                ))}
              </div>
@@ -1297,7 +1305,7 @@ const PlayerView = ({ gameId, user, username }) => {
                                        <>
                                            <img src={song.coverArt || "https://placehold.co/100"} className="w-12 h-12 rounded object-cover bg-slate-700" />
                                            <div className="text-left overflow-hidden">
-                                               <div className="font-bold truncate text-sm">{song.movie}</div>
+                                               <div className="font-bold truncate text-sm text-white">{song.movie}</div>
                                                <div className="text-xs text-slate-400 truncate">{song.title}</div>
                                            </div>
                                        </>
@@ -1312,7 +1320,7 @@ const PlayerView = ({ gameId, user, username }) => {
                    </div>
                    <button 
                      onClick={() => setShowHistory(false)}
-                     className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                     className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
                    >
                      <ArrowLeft size={20} /> Back
                    </button>
@@ -1326,14 +1334,14 @@ const PlayerView = ({ gameId, user, username }) => {
                <div className="min-h-screen bg-gradient-to-b from-yellow-600 to-yellow-900 flex flex-col items-center justify-center p-6 text-center text-white">
                    <Trophy size={80} className="text-yellow-200 mb-6 animate-bounce md:w-32 md:h-32" />
                    <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-xl">VICTORY!</h1>
-                   <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl">
+                   <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl text-white">
                        Final Score: {myScore}
                    </div>
                    
                    {/* History Button for Winner */}
                    <button 
                      onClick={() => setShowHistory(true)}
-                     className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm"
+                     className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm text-white"
                    >
                      <History size={16}/> View Songs
                    </button>
@@ -1349,7 +1357,7 @@ const PlayerView = ({ gameId, user, username }) => {
            return (
                <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
                    <h1 className="text-3xl md:text-4xl font-black mb-4 text-slate-500">GAME OVER</h1>
-                   <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-sm">
+                   <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-sm border border-slate-700">
                        <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Winner</div>
                        <div className="flex flex-col items-center mb-6">
                            {game.winner?.avatar && <img src={game.winner.avatar} className="w-16 h-16 rounded-full border-2 border-yellow-500 mb-2 object-cover bg-slate-800" />}
@@ -1358,12 +1366,12 @@ const PlayerView = ({ gameId, user, username }) => {
                        
                        <div className="border-t border-slate-700 pt-6 mb-6">
                            <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Your Score</div>
-                           <div className="text-2xl font-bold">{myScore}</div>
+                           <div className="text-2xl font-bold text-white">{myScore}</div>
                        </div>
 
                        <button 
                          onClick={() => setShowHistory(true)}
-                         className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                         className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
                        >
                          <History size={18}/> View Song History
                        </button>
@@ -1477,11 +1485,11 @@ const PlayerView = ({ gameId, user, username }) => {
            </div>
            <div className="text-center">
                <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Room</div>
-               <div className="font-mono text-lg">{gameId}</div>
+               <div className="font-mono text-lg text-white">{gameId}</div>
            </div>
            <div className="text-right">
                <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Song</div>
-               <div className="text-xl font-bold">{game.round}/{game.totalRounds}</div>
+               <div className="text-xl font-bold text-white">{game.round}/{game.totalRounds}</div>
            </div>
        </div>
 
@@ -1498,7 +1506,7 @@ const PlayerView = ({ gameId, user, username }) => {
              onClick={buzzIn}
              className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
           >
-             <span className="text-5xl md:text-7xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
+             <span className="text-5xl md:text-7xl font-black text-red-100 group-hover:text-white transition-colors">BUZZ</span>
           </button>
           <p className="mt-8 text-slate-400 font-medium animate-pulse text-center">Wait for the music...</p>
        </div>
