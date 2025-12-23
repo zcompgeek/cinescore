@@ -16,9 +16,10 @@ import {
   updateDoc, 
   runTransaction,
   arrayUnion,
-  increment
+  increment,
+  writeBatch
 } from 'firebase/firestore';
-import { Volume2, Mic, Music, Trophy, Users, Play, SkipForward, AlertCircle, Smartphone, Film, Check, X, Bug, FastForward, RefreshCw, Star } from 'lucide-react';
+import { Volume2, Mic, Music, Trophy, Users, Play, SkipForward, AlertCircle, Smartphone, Film, Check, X, FastForward, RefreshCw, Star } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -556,7 +557,7 @@ const searchItunes = async (query) => {
 // --- COMPONENTS ---
 
 // 1. LANDING SCREEN
-const Landing = ({ setMode, joinGame, startDebug }) => {
+const Landing = ({ setMode, joinGame }) => {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
 
@@ -586,13 +587,6 @@ const Landing = ({ setMode, joinGame, startDebug }) => {
             Host a New Game
           </button>
           
-          <button 
-            onClick={startDebug}
-            className="w-full py-3 bg-amber-900/30 text-amber-500 border border-amber-500/50 rounded-xl font-bold text-sm hover:bg-amber-900/50 transition-colors flex items-center justify-center gap-2"
-          >
-             <Bug size={18}/> DEBUG MODE (Local Test)
-          </button>
-
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-700"></span></div>
             <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900 text-slate-500">OR JOIN EXISTING</span></div>
@@ -632,7 +626,6 @@ const Landing = ({ setMode, joinGame, startDebug }) => {
 const HostView = ({ gameId, user }) => {
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [spotifyToken, setSpotifyToken] = useState("");
   const [category, setCategory] = useState("all_stars");
   const [totalRounds, setTotalRounds] = useState(10);
   const [showSettings, setShowSettings] = useState(true);
@@ -676,7 +669,7 @@ const HostView = ({ gameId, user }) => {
   }, [game?.skips, players.length, game?.status]);
 
 
-  // Gemini Verification Effect
+  // Gemini Verification Effect & Auto-Advance
   useEffect(() => {
     if (game?.currentAnswer && !game?.answerVerified && !verification) {
       const verify = async () => {
@@ -714,6 +707,11 @@ const HostView = ({ gameId, user }) => {
                setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
            }
         });
+
+        // AUTO ADVANCE if correct
+        if (scoreToAdd > 0) {
+            setTimeout(() => nextRound(), 3000);
+        }
       };
       verify();
     }
@@ -722,7 +720,17 @@ const HostView = ({ gameId, user }) => {
 
   const startGame = async () => {
     setShowSettings(false);
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+    
+    // Reset all player scores
+    const batch = writeBatch(db);
+    players.forEach(p => {
+        const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', p.id);
+        batch.update(pRef, { score: 0 });
+    });
+    
+    // Update Game State
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+    batch.update(gameRef, {
       status: 'playing',
       round: 0,
       totalRounds: totalRounds,
@@ -736,6 +744,8 @@ const HostView = ({ gameId, user }) => {
       attemptedThisRound: [],
       feedbackMessage: null
     });
+    
+    await batch.commit();
     nextRound();
   };
 
@@ -805,9 +815,9 @@ const HostView = ({ gameId, user }) => {
 
   if (showSettings) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white p-6 flex flex-col items-center">
+      <div className="min-h-screen bg-slate-900 text-white p-4 md:p-6 flex flex-col items-center">
         <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
-        <div className="bg-slate-800 p-6 rounded-xl max-w-lg w-full space-y-6 border border-slate-700">
+        <div className="bg-slate-800 p-4 md:p-6 rounded-xl max-w-lg w-full space-y-6 border border-slate-700">
           <div>
             <label className="block text-sm font-bold mb-2 text-slate-400">GAME CODE</label>
             <div className="text-4xl font-mono font-black text-center bg-black/30 p-4 rounded-lg tracking-widest text-blue-400">
@@ -843,17 +853,6 @@ const HostView = ({ gameId, user }) => {
              </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2 text-slate-400">SPOTIFY TOKEN (Optional)</label>
-            <input 
-              className="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-slate-300 mb-2"
-              placeholder="Paste token for full playback control..."
-              value={spotifyToken}
-              onChange={(e) => setSpotifyToken(e.target.value)}
-            />
-            <p className="text-xs text-slate-500">Without a token, we use 30s previews from iTunes. Good for trivia!</p>
-          </div>
-
           <div className="pt-4 border-t border-slate-700">
             <h3 className="font-bold mb-2 flex items-center gap-2"><Users size={18}/> Players Joined ({players.length})</h3>
             <ul className="space-y-1 max-h-32 overflow-y-auto">
@@ -886,9 +885,9 @@ const HostView = ({ gameId, user }) => {
        
        {/* Top Bar */}
        <div className="bg-slate-900 p-4 shadow-lg flex justify-between items-center border-b border-slate-800">
-          <div className="flex items-center gap-4">
-             <div className="bg-blue-600 px-3 py-1 rounded font-bold text-sm">ROUND {game?.round} / {game?.totalRounds}</div>
-             <div className="text-slate-400 font-mono text-xl">{gameId}</div>
+          <div className="flex items-center gap-2 md:gap-4">
+             <div className="bg-blue-600 px-2 py-1 md:px-3 md:py-1 rounded font-bold text-xs md:text-sm whitespace-nowrap">R {game?.round} / {game?.totalRounds}</div>
+             <div className="text-slate-400 font-mono text-lg md:text-xl">{gameId}</div>
           </div>
           <div className="flex gap-2">
              <button onClick={giveUp} className="px-3 py-1 bg-slate-800 text-slate-300 text-xs rounded hover:bg-slate-700">Skip Song</button>
@@ -896,10 +895,10 @@ const HostView = ({ gameId, user }) => {
           </div>
        </div>
 
-       <div className="flex-1 flex flex-col md:flex-row">
+       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           
           {/* Main Stage */}
-          <div className="flex-1 p-8 flex flex-col items-center justify-center relative">
+          <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-y-auto">
              
              {/* Dynamic Background Art */}
              {game?.currentSong?.coverArt && (
@@ -912,11 +911,11 @@ const HostView = ({ gameId, user }) => {
              <div className="z-10 w-full max-w-2xl text-center">
                 
                 {/* Status Indicator */}
-                <div className="mb-8">
+                <div className="mb-4 md:mb-8">
                    {/* Feedback Toast */}
                    {game?.feedbackMessage && (
                        <div className="absolute top-0 left-0 right-0 p-4 flex justify-center z-50 animate-bounce-short">
-                           <div className="bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg">
+                           <div className="bg-red-600 text-white px-4 md:px-6 py-2 rounded-full font-bold shadow-lg text-sm md:text-base">
                                {game.feedbackMessage}
                            </div>
                        </div>
@@ -924,16 +923,16 @@ const HostView = ({ gameId, user }) => {
 
                    {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
-                       <div className="bg-slate-900/90 p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
-                           <Trophy size={80} className="text-yellow-400 mx-auto mb-4" />
-                           <h1 className="text-4xl font-black mb-2">GAME OVER</h1>
-                           <div className="text-2xl mb-8">
+                       <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
+                           <Trophy size={60} md:size={80} className="text-yellow-400 mx-auto mb-4" />
+                           <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
+                           <div className="text-xl md:text-2xl mb-6 md:mb-8">
                                Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
                                <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
                            </div>
                            <button 
                              onClick={handleNewGame}
-                             className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"
+                             className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"
                            >
                              <RefreshCw size={20}/> Setup New Game
                            </button>
@@ -943,8 +942,8 @@ const HostView = ({ gameId, user }) => {
                    {/* PLAYING STATE */}
                    {game?.status === 'playing' && !game?.buzzerWinner && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
-                        <Volume2 size={64} className="mb-4" />
-                        <h2 className="text-3xl font-bold">Listen Closely...</h2>
+                        <Volume2 size={48} md:size={64} className="mb-4" />
+                        <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
                         <div className="mt-4 flex gap-2">
                              {game.skips?.length > 0 && (
                                  <span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>
@@ -955,23 +954,23 @@ const HostView = ({ gameId, user }) => {
 
                    {game?.buzzerWinner && game?.status !== 'revealed' && (
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short">
-                        <AlertCircle size={64} className="mb-4" />
-                        <h2 className="text-4xl font-black">{game.buzzerWinner.username} BUZZED!</h2>
+                        <AlertCircle size={48} md:size={64} className="mb-4" />
+                        <h2 className="text-3xl md:text-4xl font-black">{game.buzzerWinner.username} BUZZED!</h2>
                         <p className="text-white mt-2 text-lg">Waiting for answer...</p>
                         {game.currentAnswer && <p className="mt-4 bg-slate-800 px-4 py-2 rounded">Processing: "{game.currentAnswer}"</p>}
                      </div>
                    )}
 
                    {game?.status === 'revealed' && (
-                     <div className="bg-slate-900/90 p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm">
+                     <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm">
                         <div className="mb-6">
-                           <img src={game.currentSong.coverArt} className="w-48 h-48 object-cover rounded mx-auto shadow-lg mb-4" />
-                           <h2 className="text-2xl font-bold text-white">{game.currentSong.movie}</h2>
-                           <p className="text-blue-400 text-lg">{game.currentSong.title}</p>
-                           <p className="text-slate-500">{game.currentSong.artist}</p>
+                           <img src={game.currentSong.coverArt} className="w-32 h-32 md:w-48 md:h-48 object-cover rounded mx-auto shadow-lg mb-4" />
+                           <h2 className="text-xl md:text-2xl font-bold text-white">{game.currentSong.movie}</h2>
+                           <p className="text-blue-400 text-base md:text-lg">{game.currentSong.title}</p>
+                           <p className="text-slate-500 text-sm md:text-base">{game.currentSong.artist}</p>
                         </div>
                         
-                        <div className={`p-4 rounded-xl font-bold text-xl mb-6 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
+                        <div className={`p-4 rounded-xl font-bold text-lg md:text-xl mb-6 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
                            {game.lastRoundScore > 0 
                              ? `+${game.lastRoundScore} Points to ${game.buzzerWinner?.username || 'Winner'}` 
                              : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : "Time's Up!")}
@@ -983,7 +982,7 @@ const HostView = ({ gameId, user }) => {
 
                         <button 
                           onClick={nextRound}
-                          className="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto"
+                          className="px-6 py-3 md:px-8 md:py-3 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto"
                         >
                           Next Round <SkipForward size={20}/>
                         </button>
@@ -994,18 +993,18 @@ const HostView = ({ gameId, user }) => {
           </div>
 
           {/* Leaderboard Sidebar */}
-          <div className="w-full md:w-80 bg-slate-900 border-l border-slate-800 p-6 flex flex-col">
-             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-               <Trophy className="text-yellow-500" /> Leaderboard
+          <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 p-4 md:p-6 flex flex-col h-1/3 md:h-auto overflow-hidden">
+             <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2">
+               <Trophy className="text-yellow-500" size={20} /> Leaderboard
              </h3>
-             <div className="space-y-3">
+             <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1">
                {players.map((p, idx) => (
-                 <div key={p.id} className={`flex items-center justify-between p-3 rounded-lg ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
+                 <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
                     <div className="flex items-center gap-3">
                        <span className={`font-mono font-bold w-6 text-center ${idx===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{idx+1}</span>
-                       <span className="font-semibold">{p.username}</span>
+                       <span className="font-semibold text-sm md:text-base">{p.username}</span>
                     </div>
-                    <span className="font-bold text-blue-400">{p.score}</span>
+                    <span className="font-bold text-blue-400 text-sm md:text-base">{p.score}</span>
                  </div>
                ))}
              </div>
@@ -1147,7 +1146,7 @@ const PlayerView = ({ gameId, user, username }) => {
   if (isMe && game.status !== 'revealed') {
     return (
       <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
-        <h1 className="text-4xl font-black text-white mb-8 animate-bounce">YOU'RE UP!</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-white mb-8 animate-bounce">YOU'RE UP!</h1>
         <div className="w-full max-w-sm space-y-4">
            {!hasAnswered ? (
              <>
@@ -1185,7 +1184,7 @@ const PlayerView = ({ gameId, user, username }) => {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
          <div className="mb-6 relative">
-            <img src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="w-64 h-64 rounded-xl shadow-2xl" />
+            <img src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="w-48 h-48 md:w-64 md:h-64 rounded-xl shadow-2xl" />
             <div className="absolute -bottom-4 -right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg font-bold">
                {game.lastRoundScore > 0 ? <Check size={24}/> : <X size={24}/>}
             </div>
@@ -1213,17 +1212,17 @@ const PlayerView = ({ gameId, user, username }) => {
   return (
     <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative">
        {/* Player HUD */}
-       <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10">
+       <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10 shrink-0">
            <div>
-               <div className="text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
+               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
                <div className="text-xl font-black text-blue-400">{myScore}</div>
            </div>
            <div className="text-center">
-               <div className="text-xs text-slate-400 uppercase font-bold tracking-widest">Room</div>
-               <div className="font-mono">{gameId}</div>
+               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Room</div>
+               <div className="font-mono text-lg">{gameId}</div>
            </div>
            <div className="text-right">
-               <div className="text-xs text-slate-400 uppercase font-bold tracking-widest">Song</div>
+               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Song</div>
                <div className="text-xl font-bold">{game.round}/{game.totalRounds}</div>
            </div>
        </div>
@@ -1236,18 +1235,18 @@ const PlayerView = ({ gameId, user, username }) => {
            </div>
        )}
        
-       <div className="flex-1 flex flex-col items-center justify-center relative">
+       <div className="flex-1 flex flex-col items-center justify-center relative p-4">
           <button 
              onClick={buzzIn}
-             className="w-72 h-72 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
+             className="w-64 h-64 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
           >
-             <span className="text-6xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
+             <span className="text-5xl md:text-7xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
           </button>
-          <p className="mt-8 text-slate-400 font-medium animate-pulse">Wait for the music...</p>
+          <p className="mt-8 text-slate-400 font-medium animate-pulse text-center">Wait for the music...</p>
        </div>
 
        {/* Bottom Actions */}
-       <div className="p-6">
+       <div className="p-4 md:p-6 shrink-0">
            <button 
              onClick={voteSkip}
              disabled={votedSkip}
@@ -1265,7 +1264,7 @@ const PlayerView = ({ gameId, user, username }) => {
 // 4. MAIN APP CONTROLLER
 export default function App() {
   const [user, setUser] = useState(null);
-  const [mode, setMode] = useState(null); // 'host' | 'player' | 'debug'
+  const [mode, setMode] = useState(null); // 'host' | 'player'
   const [gameId, setGameId] = useState(null);
   const [username, setUsername] = useState("");
 
@@ -1320,66 +1319,7 @@ export default function App() {
     }
   };
 
-  const startDebugMode = async () => {
-    if (!user) return;
-    const debugCode = "DEBUG";
-    
-    // 1. Reset Game State
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', debugCode), {
-      hostId: user.uid,
-      status: 'lobby',
-      createdAt: new Date(),
-      round: 0,
-      buzzerWinner: null,
-      scores: {},
-      currentSong: null
-    });
-
-    // 2. Create Bots
-    const bots = [
-        { id: 'bot1', username: 'CineBot 3000', score: 150 },
-        { id: 'bot2', username: 'SpielbergFan', score: 50 },
-        { id: 'bot3', username: 'PopcornLover', score: 300 },
-        { id: 'bot4', username: 'ZimmerStan', score: 0 },
-    ];
-
-    for (const bot of bots) {
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', debugCode, 'players', bot.id), bot);
-    }
-
-    // 3. Add Dev Player (You)
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', debugCode, 'players', user.uid), {
-        username: "DEV_TESTER",
-        score: 0,
-        joinedAt: new Date()
-    });
-
-    setGameId(debugCode);
-    setUsername("DEV_TESTER");
-    setMode('debug');
-  };
-
   if (!user) return <div className="h-screen bg-slate-950 flex items-center justify-center text-slate-500">Connecting to CineScore...</div>;
-
-  if (mode === 'debug' && gameId) {
-    return (
-        <div className="flex h-screen w-screen overflow-hidden bg-black">
-            <div className="w-1/2 border-r border-slate-700 relative flex flex-col">
-                <div className="bg-amber-600 text-white text-xs font-bold px-2 py-1 text-center shadow-lg z-50">HOST VIEW (CONTROLS)</div>
-                <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
-                   {/* Scale down slightly if needed to fit */}
-                   <HostView gameId={gameId} user={user} />
-                </div>
-            </div>
-            <div className="w-1/2 relative flex flex-col">
-                <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 text-center shadow-lg z-50">PLAYER VIEW (YOU)</div>
-                <div className="flex-1 overflow-y-auto overflow-x-hidden relative border-l border-slate-800">
-                   <PlayerView gameId={gameId} user={user} username={username} />
-                </div>
-            </div>
-        </div>
-    );
-  }
 
   if (mode === 'host' && gameId) return <HostView gameId={gameId} user={user} />;
   if (mode === 'player' && gameId) return <PlayerView gameId={gameId} user={user} username={username} />;
@@ -1390,5 +1330,5 @@ export default function App() {
     return <div className="h-screen bg-slate-950 flex items-center justify-center text-white">Creating Room...</div>;
   }
 
-  return <Landing setMode={setMode} joinGame={handleJoinGame} startDebug={startDebugMode} />;
+  return <Landing setMode={setMode} joinGame={handleJoinGame} />;
 }
