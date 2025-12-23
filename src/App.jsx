@@ -19,7 +19,7 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -333,6 +333,110 @@ const CATEGORIES = {
     { title: "Logan", artist: "Marco Beltrami", movie: "Logan" },
     { title: "Deadpool Rap", artist: "Teamheadkick", movie: "Deadpool" },
     { title: "Venom", artist: "Eminem", movie: "Venom" }
+  ],
+  action: [
+    { title: "He's a Pirate", artist: "Klaus Badelt", movie: "Pirates of the Caribbean: The Curse of the Black Pearl" },
+    { title: "Theme from Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible" },
+    { title: "Raiders March", artist: "John Williams", movie: "Indiana Jones and the Raiders of the Lost Ark" },
+    { title: "James Bond Theme", artist: "Monty Norman", movie: "Dr. No" },
+    { title: "Gladiator Theme", artist: "Hans Zimmer", movie: "Gladiator" },
+    { title: "Now We Are Free", artist: "Hans Zimmer", movie: "Gladiator" },
+    { title: "Mombasa", artist: "Hans Zimmer", movie: "Inception" },
+    { title: "The Dark Knight", artist: "Hans Zimmer", movie: "The Dark Knight" },
+    { title: "Molossus", artist: "Hans Zimmer", movie: "Batman Begins" },
+    { title: "Why So Serious?", artist: "Hans Zimmer", movie: "The Dark Knight" },
+    { title: "Braveheart Theme", artist: "James Horner", movie: "Braveheart" },
+    { title: "Last of the Mohicans", artist: "Trevor Jones", movie: "The Last of the Mohicans" },
+    { title: "Top Gun Anthem", artist: "Harold Faltermeyer", movie: "Top Gun" },
+    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun" },
+    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III" },
+    { title: "Gonna Fly Now", artist: "Bill Conti", movie: "Rocky" },
+    { title: "Training Montage", artist: "Vince DiCola", movie: "Rocky IV" },
+    { title: "Conan the Barbarian", artist: "Basil Poledouris", movie: "Conan the Barbarian" },
+    { title: "Robocop Theme", artist: "Basil Poledouris", movie: "RoboCop" },
+    { title: "Predator Theme", artist: "Alan Silvestri", movie: "Predator" },
+    { title: "Die Hard", artist: "Michael Kamen", movie: "Die Hard" },
+    { title: "Lethal Weapon", artist: "Michael Kamen", movie: "Lethal Weapon" },
+    { title: "Speed Title", artist: "Mark Mancina", movie: "Speed" },
+    { title: "The Rock", artist: "Hans Zimmer", movie: "The Rock" },
+    { title: "Face/Off", artist: "John Powell", movie: "Face/Off" },
+    { title: "Con Air", artist: "Mark Mancina", movie: "Con Air" },
+    { title: "Armageddon", artist: "Trevor Rabin", movie: "Armageddon" },
+    { title: "Independence Day", artist: "David Arnold", movie: "Independence Day" },
+    { title: "Air Force One", artist: "Jerry Goldsmith", movie: "Air Force One" },
+    { title: "The Mummy", artist: "Jerry Goldsmith", movie: "The Mummy" },
+    { title: "National Treasure", artist: "Trevor Rabin", movie: "National Treasure" },
+    { title: "Bourne Identity", artist: "John Powell", movie: "The Bourne Identity" },
+    { title: "Extreme Ways", artist: "Moby", movie: "The Bourne Identity" },
+    { title: "Casino Royale", artist: "David Arnold", movie: "Casino Royale" },
+    { title: "You Know My Name", artist: "Chris Cornell", movie: "Casino Royale" },
+    { title: "Skyfall", artist: "Adele", movie: "Skyfall" },
+    { title: "No Time To Die", artist: "Billie Eilish", movie: "No Time to Die" },
+    { title: "Writing's on the Wall", artist: "Sam Smith", movie: "Spectre" },
+    { title: "John Wick Mode", artist: "Le Castle Vania", movie: "John Wick" },
+    { title: "Kill Bill", artist: "Tomoyasu Hotei", movie: "Kill Bill: Vol. 1" },
+    { title: "Bang Bang", artist: "Nancy Sinatra", movie: "Kill Bill: Vol. 1" },
+    { title: "Misirlou", artist: "Dick Dale", movie: "Pulp Fiction" },
+    { title: "Mad Max Fury Road", artist: "Junkie XL", movie: "Mad Max: Fury Road" },
+    { title: "Brothers in Arms", artist: "Junkie XL", movie: "Mad Max: Fury Road" },
+    { title: "Wonder Woman", artist: "Hans Zimmer", movie: "Batman v Superman" },
+    { title: "300", artist: "Tyler Bates", movie: "300" },
+    { title: "Troy", artist: "James Horner", movie: "Troy" },
+    { title: "Kingdom of Heaven", artist: "Harry Gregson-Williams", movie: "Kingdom of Heaven" },
+    { title: "King Arthur", artist: "Hans Zimmer", movie: "King Arthur" },
+    { title: "Rush Hour", artist: "Lalo Schifrin", movie: "Rush Hour" }
+  ],
+  animation: [
+    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King" },
+    { title: "Under the Sea", artist: "Samuel E. Wright", movie: "The Little Mermaid" },
+    { title: "Part of Your World", artist: "Jodi Benson", movie: "The Little Mermaid" },
+    { title: "Beauty and the Beast", artist: "Angela Lansbury", movie: "Beauty and the Beast" },
+    { title: "Be Our Guest", artist: "Jerry Orbach", movie: "Beauty and the Beast" },
+    { title: "A Whole New World", artist: "Brad Kane", movie: "Aladdin" },
+    { title: "Friend Like Me", artist: "Robin Williams", movie: "Aladdin" },
+    { title: "Colors of the Wind", artist: "Judy Kuhn", movie: "Pocahontas" },
+    { title: "You've Got a Friend in Me", artist: "Randy Newman", movie: "Toy Story" },
+    { title: "When She Loved Me", artist: "Sarah McLachlan", movie: "Toy Story 2" },
+    { title: "Hakuna Matata", artist: "Nathan Lane", movie: "The Lion King" },
+    { title: "Can You Feel the Love Tonight", artist: "Elton John", movie: "The Lion King" },
+    { title: "Reflection", artist: "Lea Salonga", movie: "Mulan" },
+    { title: "I'll Make a Man Out of You", artist: "Donny Osmond", movie: "Mulan" },
+    { title: "Go the Distance", artist: "Roger Bart", movie: "Hercules" },
+    { title: "You'll Be in My Heart", artist: "Phil Collins", movie: "Tarzan" },
+    { title: "Let It Go", artist: "Idina Menzel", movie: "Frozen" },
+    { title: "Do You Want to Build a Snowman?", artist: "Kristen Bell", movie: "Frozen" },
+    { title: "Into the Unknown", artist: "Idina Menzel", movie: "Frozen II" },
+    { title: "How Far I'll Go", artist: "Auli'i Cravalho", movie: "Moana" },
+    { title: "You're Welcome", artist: "Dwayne Johnson", movie: "Moana" },
+    { title: "Remember Me", artist: "Benjamin Bratt", movie: "Coco" },
+    { title: "Un Poco Loco", artist: "Anthony Gonzalez", movie: "Coco" },
+    { title: "We Don't Talk About Bruno", artist: "Carolina Gaitan", movie: "Encanto" },
+    { title: "Surface Pressure", artist: "Jessica Darrow", movie: "Encanto" },
+    { title: "The Bare Necessities", artist: "Phil Harris", movie: "The Jungle Book" },
+    { title: "I Wan'na Be Like You", artist: "Louis Prima", movie: "The Jungle Book" },
+    { title: "Cruella De Vil", artist: "Bill Lee", movie: "101 Dalmatians" },
+    { title: "Bella Notte", artist: "George Givot", movie: "Lady and the Tramp" },
+    { title: "Once Upon a Dream", artist: "Mary Costa", movie: "Sleeping Beauty" },
+    { title: "Bibbidi-Bobbidi-Boo", artist: "Verna Felton", movie: "Cinderella" },
+    { title: "When You Wish Upon a Star", artist: "Cliff Edwards", movie: "Pinocchio" },
+    { title: "Whistle While You Work", artist: "Adriana Caselotti", movie: "Snow White and the Seven Dwarfs" },
+    { title: "Heigh-Ho", artist: "The Dwarfs", movie: "Snow White and the Seven Dwarfs" },
+    { title: "Married Life", artist: "Michael Giacchino", movie: "Up" },
+    { title: "Touch the Sky", artist: "Julie Fowlis", movie: "Brave" },
+    { title: "Le Festin", artist: "Camille", movie: "Ratatouille" },
+    { title: "Nemo Egg", artist: "Thomas Newman", movie: "Finding Nemo" },
+    { title: "The Incredibles", artist: "Michael Giacchino", movie: "The Incredibles" },
+    { title: "Monsters, Inc.", artist: "Randy Newman", movie: "Monsters, Inc." },
+    { title: "If I Didn't Have You", artist: "Billy Crystal", movie: "Monsters, Inc." },
+    { title: "Life is a Highway", artist: "Rascal Flatts", movie: "Cars" },
+    { title: "Real Gone", artist: "Sheryl Crow", movie: "Cars" },
+    { title: "Accidentally in Love", artist: "Counting Crows", movie: "Shrek 2" },
+    { title: "I'm a Believer", artist: "Smash Mouth", movie: "Shrek" },
+    { title: "All Star", artist: "Smash Mouth", movie: "Shrek" },
+    { title: "Everything Is Awesome", artist: "Tegan and Sara", movie: "The Lego Movie" },
+    { title: "Spider-Man", artist: "Paul Francis Webster", movie: "Spider-Man: Into the Spider-Verse" },
+    { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
+    { title: "What's Up Danger", artist: "Blackway", movie: "Spider-Man: Into the Spider-Verse" }
   ]
 };
 
@@ -398,6 +502,17 @@ const searchItunes = async (query) => {
     return data.results[0] || null;
   } catch (e) {
     console.error("iTunes Search failed", e);
+    return null;
+  }
+};
+
+// Search iTunes for Movie Poster (to get film art instead of album art)
+const searchMoviePoster = async (query) => {
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=movie&limit=1`);
+    const data = await res.json();
+    return data.results[0]?.artworkUrl100?.replace('100x100', '600x600') || null;
+  } catch (e) {
     return null;
   }
 };
@@ -566,7 +681,7 @@ const Landing = ({ setMode, joinGame }) => {
                    onClick={() => setStep(2)}
                    className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-2"
                  >
-                   Next: Draw Avatar
+                   Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" />
                  </button>
                </div>
              </>
@@ -731,9 +846,13 @@ const HostView = ({ gameId, user }) => {
     const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
     
     // Fetch audio url for first song
-    const itunesData = await searchItunes(`${trackData.title} ${trackData.artist} soundtrack`);
-    const previewUrl = itunesData?.previewUrl || null;
-    const coverArt = itunesData?.artworkUrl100?.replace('100x100', '600x600') || null;
+    const [musicData, posterUrl] = await Promise.all([
+        searchItunes(`${trackData.title} ${trackData.artist} soundtrack`),
+        searchMoviePoster(trackData.movie)
+    ]);
+
+    const previewUrl = musicData?.previewUrl || null;
+    const coverArt = posterUrl || musicData?.artworkUrl100?.replace('100x100', '600x600') || null;
 
     // Reset all player scores
     const batch = writeBatch(db);
@@ -748,7 +867,7 @@ const HostView = ({ gameId, user }) => {
       status: 'playing',
       round: 1, // Start directly at round 1
       totalRounds: totalRounds,
-      playedSongs: [trackData.title], // Initialize history
+      playedSongs: [], // Initialize history to empty array
       skips: [],
       winner: null,
       buzzerWinner: null,
@@ -792,32 +911,62 @@ const HostView = ({ gameId, user }) => {
     const playedSongs = game?.playedSongs || [];
     // Handle potential legacy string data just in case
     const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
-    const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
+    let availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
 
     if (availableSongs.length === 0) {
         alert("Ran out of unique songs in this category!");
         return;
     }
-
-    const trackData = availableSongs[Math.floor(Math.random() * availableSongs.length)];
     
-    // Fetch audio url
-    const itunesData = await searchItunes(`${trackData.title} ${trackData.artist} soundtrack`);
-    const previewUrl = itunesData?.previewUrl || null;
-    const coverArt = itunesData?.artworkUrl100?.replace('100x100', '600x600') || null;
+    let selectedSong = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+
+    // Retry loop to find a song with valid data (audio + image)
+    while (!selectedSong && availableSongs.length > 0 && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        const randomIndex = Math.floor(Math.random() * availableSongs.length);
+        const candidate = availableSongs[randomIndex];
+
+        // Fetch Music and Poster in parallel
+        const [musicData, posterUrl] = await Promise.all([
+            searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
+            searchMoviePoster(candidate.movie)
+        ]);
+
+        // Check if we got a playable preview and at least some artwork
+        if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
+            selectedSong = {
+                ...candidate,
+                previewUrl: musicData.previewUrl,
+                // Prefer movie poster, fallback to album art. Always upscale.
+                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
+            };
+        } else {
+            console.warn(`Skipping incomplete song data: ${candidate.title}`);
+            // Remove bad candidate from local list so we don't pick it again immediately
+            availableSongs.splice(randomIndex, 1);
+        }
+    }
+
+    if (!selectedSong) {
+        // Fallback if loop fails
+        const fallback = availableSongs[0];
+        selectedSong = { ...fallback, previewUrl: null, coverArt: null }; 
+    }
 
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-      currentSong: { ...trackData, previewUrl, coverArt },
+      currentSong: selectedSong,
       buzzerWinner: null,
       currentAnswer: null,
       answerVerified: false,
       status: 'playing',
       round: increment(1),
       playedSongs: arrayUnion({
-          title: trackData.title,
-          artist: trackData.artist,
-          movie: trackData.movie,
-          coverArt: coverArt
+          title: selectedSong.title,
+          artist: selectedSong.artist,
+          movie: selectedSong.movie,
+          coverArt: selectedSong.coverArt
       }),
       skips: [],
       attemptedThisRound: [], // Reset attempts
@@ -981,7 +1130,7 @@ const HostView = ({ gameId, user }) => {
                    {game?.status === 'game_over' && (
                        showHistory ? (
                            <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-fade-in w-full h-[600px] flex flex-col">
-                               <h2 className="text-3xl font-bold mb-4 flex items-center gap-2 justify-center">Game History</h2>
+                               <h2 className="text-3xl font-bold mb-4 flex items-center gap-2 justify-center"><Clock /> Game History</h2>
                                <div className="flex-1 overflow-y-auto space-y-2 pr-2">
                                    {game.playedSongs && game.playedSongs.length > 0 ? (
                                        game.playedSongs.map((song, i) => (
@@ -1030,7 +1179,7 @@ const HostView = ({ gameId, user }) => {
                                      onClick={() => setShowHistory(true)}
                                      className="px-6 py-3 md:px-8 md:py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
                                    >
-                                     <History size={20}/> View Song History
+                                     <Clock size={20}/> View Song History
                                    </button>
                                </div>
                            </div>
@@ -1212,7 +1361,7 @@ const PlayerView = ({ gameId, user, username }) => {
        if (showHistory) {
            return (
                <div className="min-h-screen bg-slate-900 flex flex-col p-6 text-white">
-                   <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2">Song History</h2>
+                   <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2"><Clock /> Song History</h2>
                    <div className="flex-1 overflow-y-auto space-y-2 mb-4">
                         {game.playedSongs && game.playedSongs.length > 0 ? (
                            game.playedSongs.map((song, i) => (
@@ -1259,7 +1408,7 @@ const PlayerView = ({ gameId, user, username }) => {
                      onClick={() => setShowHistory(true)}
                      className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm text-white"
                    >
-                     <History size={16}/> View Songs
+                     <Clock size={16}/> View Songs
                    </button>
 
                    <div className="mt-8 flex gap-2">
@@ -1289,7 +1438,7 @@ const PlayerView = ({ gameId, user, username }) => {
                          onClick={() => setShowHistory(true)}
                          className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
                        >
-                         <History size={18}/> View Song History
+                         <Clock size={18}/> View Song History
                        </button>
                    </div>
                    <p className="mt-8 text-slate-500 animate-pulse">Waiting for host...</p>
@@ -1422,7 +1571,7 @@ const PlayerView = ({ gameId, user, username }) => {
              onClick={buzzIn}
              className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
           >
-             <span className="text-5xl md:text-7xl font-black text-red-100 group-hover:text-white transition-colors">BUZZ</span>
+             <span className="text-5xl md:text-7xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
           </button>
           <p className="mt-8 text-slate-400 font-medium animate-pulse text-center">Wait for the music...</p>
        </div>
