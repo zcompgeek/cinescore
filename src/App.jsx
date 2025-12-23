@@ -18,25 +18,18 @@ import {
   arrayUnion,
   increment
 } from 'firebase/firestore';
-import { Volume2, Mic, Music, Trophy, Users, Play, SkipForward, AlertCircle, Smartphone, Film, Check, X, Bug } from 'lucide-react';
+import { Volume2, Mic, Music, Trophy, Users, Play, SkipForward, AlertCircle, Smartphone, Film, Check, X, Bug, FastForward, RefreshCw, Star } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
-// This robustly handles:
-// 1. The Preview Environment (using global variables)
-// 2. Vite/Firebase App Hosting (using import.meta.env)
-// 3. Manual Fallback (using placeholders)
-
 const getEnvironmentConfig = () => {
-  // 1. Preview Environment (Internal Use)
   if (typeof __firebase_config !== 'undefined') {
     return {
       firebaseConfig: JSON.parse(__firebase_config),
       appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
-      geminiKey: "" // Runtime injects key automatically if empty
+      geminiKey: "" 
     };
   }
 
-  // 2. Standard Vite / Firebase App Hosting
   try {
     if (import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
       return {
@@ -52,11 +45,8 @@ const getEnvironmentConfig = () => {
         geminiKey: import.meta.env.VITE_GEMINI_API_KEY || ""
       };
     }
-  } catch (e) {
-    // Ignore error if import.meta is not available
-  }
+  } catch (e) {}
 
-  // 3. Manual Fallback (For simple copy-paste deployment)
   return {
     firebaseConfig: {
       apiKey: "REPLACE_WITH_YOUR_API_KEY",
@@ -73,64 +63,219 @@ const getEnvironmentConfig = () => {
 
 const { firebaseConfig, appId, geminiKey: initialGeminiKey } = getEnvironmentConfig();
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- TRIVIA DATASETS (EXPANDED) ---
+// --- TRIVIA DATASETS ---
 const CATEGORIES = {
-  classics: [
+  all_stars: [ // Target: Under 40 (Millennials/Gen Z iconic hits)
+    { title: "Hedwig's Theme", artist: "John Williams", movie: "Harry Potter" },
+    { title: "My Heart Will Go On", artist: "Celine Dion", movie: "Titanic" },
+    { title: "All Star", artist: "Smash Mouth", movie: "Shrek" },
+    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King" },
+    { title: "Let It Go", artist: "Idina Menzel", movie: "Frozen" },
+    { title: "Lose Yourself", artist: "Eminem", movie: "8 Mile" },
+    { title: "I Will Always Love You", artist: "Whitney Houston", movie: "The Bodyguard" },
+    { title: "See You Again", artist: "Wiz Khalifa", movie: "Furious 7" },
+    { title: "A Thousand Years", artist: "Christina Perri", movie: "Twilight" },
+    { title: "Main Title", artist: "John Williams", movie: "Star Wars" },
+    { title: "The Imperial March", artist: "John Williams", movie: "Star Wars" },
+    { title: "He's a Pirate", artist: "Klaus Badelt", movie: "Pirates of the Caribbean" },
+    { title: "Theme from Jurassic Park", artist: "John Williams", movie: "Jurassic Park" },
+    { title: "The Avengers", artist: "Alan Silvestri", movie: "The Avengers" },
+    { title: "Spider-Man Main Title", artist: "Danny Elfman", movie: "Spider-Man" },
+    { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
+    { title: "Shallow", artist: "Lady Gaga", movie: "A Star Is Born" },
+    { title: "Happy", artist: "Pharrell Williams", movie: "Despicable Me 2" },
+    { title: "Can't Stop the Feeling!", artist: "Justin Timberlake", movie: "Trolls" },
+    { title: "Everything Is Awesome", artist: "Tegan and Sara", movie: "The Lego Movie" },
+    { title: "How Far I'll Go", artist: "Auli'i Cravalho", movie: "Moana" },
+    { title: "You've Got a Friend in Me", artist: "Randy Newman", movie: "Toy Story" },
+    { title: "Life is a Highway", artist: "Rascal Flatts", movie: "Cars" },
+    { title: "I'm Just Ken", artist: "Ryan Gosling", movie: "Barbie" },
+    { title: "Dance The Night", artist: "Dua Lipa", movie: "Barbie" },
+    { title: "City of Stars", artist: "Ryan Gosling", movie: "La La Land" },
+    { title: "The Greatest Show", artist: "Hugh Jackman", movie: "The Greatest Showman" },
+    { title: "Rewrite The Stars", artist: "Zac Efron", movie: "The Greatest Showman" },
+    { title: "Skyfall", artist: "Adele", movie: "Skyfall" },
+    { title: "No Time To Die", artist: "Billie Eilish", movie: "No Time To Die" },
+    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible" },
+    { title: "Cornfield Chase", artist: "Hans Zimmer", movie: "Interstellar" },
+    { title: "Time", artist: "Hans Zimmer", movie: "Inception" },
+    { title: "The Dark Knight Theme", artist: "Hans Zimmer", movie: "The Dark Knight" },
+    { title: "Concerning Hobbits", artist: "Howard Shore", movie: "Lord of the Rings" },
+    { title: "Theme from Schindler's List", artist: "John Williams", movie: "Schindler's List" },
+    { title: "Now We Are Free", artist: "Hans Zimmer", movie: "Gladiator" },
+    { title: "I See You", artist: "Leona Lewis", movie: "Avatar" },
+    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun" },
+    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky" },
+    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
+    { title: "Men in Black", artist: "Will Smith", movie: "Men in Black" },
+    { title: "Gangsta's Paradise", artist: "Coolio", movie: "Dangerous Minds" },
+    { title: "Kiss Me", artist: "Sixpence None The Richer", movie: "She's All That" },
+    { title: "Don't You (Forget About Me)", artist: "Simple Minds", movie: "The Breakfast Club" },
+    { title: "Footloose", artist: "Kenny Loggins", movie: "Footloose" },
+    { title: "We Don't Talk About Bruno", artist: "Encanto Cast", movie: "Encanto" },
+    { title: "Remember Me", artist: "Miguel", movie: "Coco" },
+    { title: "Hakuna Matata", artist: "Nathan Lane", movie: "The Lion King" },
+    { title: "Under the Sea", artist: "Samuel E. Wright", movie: "The Little Mermaid" }
+  ],
+  classics: [ // Target: Ages 40-70 (Golden Era, 70s, 80s hits)
     { title: "The Godfather Waltz", artist: "Nino Rota", movie: "The Godfather" },
     { title: "Tara's Theme", artist: "Max Steiner", movie: "Gone with the Wind" },
-    { title: "As Time Goes By", artist: "Dooley Wilson", movie: "Casablanca" },
-    { title: "Singin' in the Rain", artist: "Gene Kelly", movie: "Singin' in the Rain" },
-    { title: "Psycho Prelude", artist: "Bernard Herrmann", movie: "Psycho" },
-    { title: "Moon River", artist: "Henry Mancini", movie: "Breakfast at Tiffany's" },
     { title: "Over the Rainbow", artist: "Judy Garland", movie: "The Wizard of Oz" },
+    { title: "Singin' in the Rain", artist: "Gene Kelly", movie: "Singin' in the Rain" },
+    { title: "As Time Goes By", artist: "Dooley Wilson", movie: "Casablanca" },
     { title: "The Sound of Music", artist: "Julie Andrews", movie: "The Sound of Music" },
-    { title: "Lara's Theme", artist: "Maurice Jarre", movie: "Doctor Zhivago" },
-    { title: "Lawrence of Arabia Theme", artist: "Maurice Jarre", movie: "Lawrence of Arabia" },
-    { title: "Colonel Bogey March", artist: "Malcolm Arnold", movie: "The Bridge on the River Kwai" },
-    { title: "The Good, the Bad and the Ugly", artist: "Ennio Morricone", movie: "The Good, the Bad and the Ugly" },
-    { title: "Pink Panther Theme", artist: "Henry Mancini", movie: "The Pink Panther" },
+    { title: "Moon River", artist: "Henry Mancini", movie: "Breakfast at Tiffany's" },
+    { title: "Mrs. Robinson", artist: "Simon & Garfunkel", movie: "The Graduate" },
+    { title: "Raindrops Keep Fallin' on My Head", artist: "B.J. Thomas", movie: "Butch Cassidy and the Sundance Kid" },
     { title: "Theme from Shaft", artist: "Isaac Hayes", movie: "Shaft" },
     { title: "Stayin' Alive", artist: "Bee Gees", movie: "Saturday Night Fever" },
+    { title: "You're The One That I Want", artist: "John Travolta", movie: "Grease" },
     { title: "Gonna Fly Now", artist: "Bill Conti", movie: "Rocky" },
-    { title: "Love Story Theme", artist: "Francis Lai", movie: "Love Story" },
-    { title: "Raindrops Keep Fallin' on My Head", artist: "B.J. Thomas", movie: "Butch Cassidy and the Sundance Kid" },
-    { title: "Mrs. Robinson", artist: "Simon & Garfunkel", movie: "The Graduate" },
-    { title: "Everybody's Talkin'", artist: "Harry Nilsson", movie: "Midnight Cowboy" },
-    { title: "Windmills of Your Mind", artist: "Noel Harrison", movie: "The Thomas Crown Affair" },
-    { title: "Goldfinger", artist: "Shirley Bassey", movie: "Goldfinger" },
-    { title: "Speak Softly Love", artist: "Nino Rota", movie: "The Godfather" },
-    { title: "Cabaret", artist: "Liza Minnelli", movie: "Cabaret" },
-    { title: "The Entertainer", artist: "Scott Joplin", movie: "The Sting" },
-    { title: "Tubular Bells", artist: "Mike Oldfield", movie: "The Exorcist" },
-    { title: "Duelling Banjos", artist: "Eric Weissberg", movie: "Deliverance" },
-    { title: "Knockin' on Heaven's Door", artist: "Bob Dylan", movie: "Pat Garrett and Billy the Kid" },
-    { title: "Suicide Is Painless", artist: "Johnny Mandel", movie: "M*A*S*H" },
-    { title: "Theme from Love Story", artist: "Francis Lai", movie: "Love Story" },
-    { title: "A Time for Us", artist: "Nino Rota", movie: "Romeo and Juliet" },
-    { title: "Chariots of Fire", artist: "Vangelis", movie: "Chariots of Fire" },
-    { title: "Don't You (Forget About Me)", artist: "Simple Minds", movie: "The Breakfast Club" },
     { title: "Take My Breath Away", artist: "Berlin", movie: "Top Gun" },
-    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III" },
-    { title: "Footloose", artist: "Kenny Loggins", movie: "Footloose" },
-    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
     { title: "The Power of Love", artist: "Huey Lewis and the News", movie: "Back to the Future" },
+    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
+    { title: "Footloose", artist: "Kenny Loggins", movie: "Footloose" },
     { title: "Flashdance... What a Feeling", artist: "Irene Cara", movie: "Flashdance" },
     { title: "Time of My Life", artist: "Bill Medley", movie: "Dirty Dancing" },
     { title: "Unchained Melody", artist: "Righteous Brothers", movie: "Ghost" },
-    { title: "My Heart Will Go On", artist: "Celine Dion", movie: "Titanic" },
-    { title: "I Will Always Love You", artist: "Whitney Houston", movie: "The Bodyguard" },
-    { title: "Streets of Philadelphia", artist: "Bruce Springsteen", movie: "Philadelphia" },
-    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King" },
-    { title: "Gangsta's Paradise", artist: "Coolio", movie: "Dangerous Minds" },
-    { title: "Lose Yourself", artist: "Eminem", movie: "8 Mile" },
-    { title: "Jai Ho", artist: "A.R. Rahman", movie: "Slumdog Millionaire" },
-    { title: "Skyfall", artist: "Adele", movie: "Skyfall" },
-    { title: "Shallow", artist: "Lady Gaga", movie: "A Star Is Born" }
+    { title: "Against All Odds", artist: "Phil Collins", movie: "Against All Odds" },
+    { title: "Endless Love", artist: "Diana Ross", movie: "Endless Love" },
+    { title: "Up Where We Belong", artist: "Joe Cocker", movie: "An Officer and a Gentleman" },
+    { title: "Fame", artist: "Irene Cara", movie: "Fame" },
+    { title: "9 to 5", artist: "Dolly Parton", movie: "9 to 5" },
+    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III" },
+    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun" },
+    { title: "Don't You (Forget About Me)", artist: "Simple Minds", movie: "The Breakfast Club" },
+    { title: "St. Elmo's Fire", artist: "John Parr", movie: "St. Elmo's Fire" },
+    { title: "Axel F", artist: "Harold Faltermeyer", movie: "Beverly Hills Cop" },
+    { title: "Chariots of Fire", artist: "Vangelis", movie: "Chariots of Fire" },
+    { title: "Raiders March", artist: "John Williams", movie: "Indiana Jones" },
+    { title: "Flying Theme", artist: "John Williams", movie: "E.T." },
+    { title: "Main Title", artist: "John Williams", movie: "Jaws" },
+    { title: "The Pink Panther Theme", artist: "Henry Mancini", movie: "The Pink Panther" },
+    { title: "Goldfinger", artist: "Shirley Bassey", movie: "Goldfinger" },
+    { title: "Live and Let Die", artist: "Paul McCartney", movie: "Live and Let Die" },
+    { title: "Nobody Does It Better", artist: "Carly Simon", movie: "The Spy Who Loved Me" },
+    { title: "For Your Eyes Only", artist: "Sheena Easton", movie: "For Your Eyes Only" },
+    { title: "A View to a Kill", artist: "Duran Duran", movie: "A View to a Kill" },
+    { title: "Windmills of Your Mind", artist: "Noel Harrison", movie: "The Thomas Crown Affair" },
+    { title: "Everybody's Talkin'", artist: "Harry Nilsson", movie: "Midnight Cowboy" },
+    { title: "Born to be Wild", artist: "Steppenwolf", movie: "Easy Rider" },
+    { title: "Stand By Me", artist: "Ben E. King", movie: "Stand By Me" },
+    { title: "Twist and Shout", artist: "The Beatles", movie: "Ferris Bueller's Day Off" },
+    { title: "Old Time Rock and Roll", artist: "Bob Seger", movie: "Risky Business" },
+    { title: "I'm Alright", artist: "Kenny Loggins", movie: "Caddyshack" },
+    { title: "Soul Man", artist: "Blues Brothers", movie: "The Blues Brothers" },
+    { title: "Bohemian Rhapsody", artist: "Queen", movie: "Wayne's World" },
+    { title: "My Girl", artist: "The Temptations", movie: "My Girl" }
+  ],
+  modern_tv: [ // Last 20 Years
+    { title: "Game of Thrones Main Title", artist: "Ramin Djawadi", movie: "Game of Thrones" },
+    { title: "Stranger Things Theme", artist: "Kyle Dixon", movie: "Stranger Things" },
+    { title: "Succession (Main Title)", artist: "Nicholas Britell", movie: "Succession" },
+    { title: "The White Lotus Theme", artist: "Cristobal Tapia de Veer", movie: "The White Lotus" },
+    { title: "The Mandalorian", artist: "Ludwig Goransson", movie: "The Mandalorian" },
+    { title: "Breaking Bad Theme", artist: "Dave Porter", movie: "Breaking Bad" },
+    { title: "Better Call Saul Theme", artist: "Little Barrie", movie: "Better Call Saul" },
+    { title: "The Office (Main Theme)", artist: "The Scrantones", movie: "The Office" },
+    { title: "Parks and Recreation", artist: "Gaby Moreno", movie: "Parks and Recreation" },
+    { title: "Big Bang Theory Theme", artist: "Barenaked Ladies", movie: "The Big Bang Theory" },
+    { title: "Modern Family Theme", artist: "Gabriel Mann", movie: "Modern Family" },
+    { title: "Brooklyn Nine-Nine", artist: "Dan Marocco", movie: "Brooklyn Nine-Nine" },
+    { title: "How I Met Your Mother", artist: "The Solids", movie: "How I Met Your Mother" },
+    { title: "Mad Men (A Beautiful Mine)", artist: "RJD2", movie: "Mad Men" },
+    { title: "Downton Abbey Theme", artist: "John Lunn", movie: "Downton Abbey" },
+    { title: "Sherlock Theme", artist: "David Arnold", movie: "Sherlock" },
+    { title: "Doctor Who Theme", artist: "Murray Gold", movie: "Doctor Who" },
+    { title: "Westworld Main Title", artist: "Ramin Djawadi", movie: "Westworld" },
+    { title: "Toss A Coin To Your Witcher", artist: "Sonya Belousova", movie: "The Witcher" },
+    { title: "Enemy", artist: "Imagine Dragons", movie: "Arcane" },
+    { title: "Yellowstone Theme", artist: "Brian Tyler", movie: "Yellowstone" },
+    { title: "Ted Lasso Theme", artist: "Marcus Mumford", movie: "Ted Lasso" },
+    { title: "Severance Main Title", artist: "Theodore Shapiro", movie: "Severance" },
+    { title: "Squid Game (Way Back Then)", artist: "Jung Jaeil", movie: "Squid Game" },
+    { title: "Wednesday Main Titles", artist: "Danny Elfman", movie: "Wednesday" },
+    { title: "You've Got Time", artist: "Regina Spektor", movie: "Orange Is the New Black" },
+    { title: "Cosy in the Rocket", artist: "Psapp", movie: "Grey's Anatomy" },
+    { title: "How to Save a Life", artist: "The Fray", movie: "Grey's Anatomy" },
+    { title: "Chasing Cars", artist: "Snow Patrol", movie: "Grey's Anatomy" },
+    { title: "Teardrop", artist: "Massive Attack", movie: "House" },
+    { title: "Woke Up This Morning", artist: "Alabama 3", movie: "The Sopranos" },
+    { title: "The Walking Dead Theme", artist: "Bear McCreary", movie: "The Walking Dead" },
+    { title: "Dexter Main Title", artist: "Rolfe Kent", movie: "Dexter" },
+    { title: "True Blood (Bad Things)", artist: "Jace Everett", movie: "True Blood" },
+    { title: "Shameless", artist: "The High Strung", movie: "Shameless" },
+    { title: "Superman", artist: "Lazlo Bane", movie: "Scrubs" },
+    { title: "I Don't Want to Be", artist: "Gavin DeGraw", movie: "One Tree Hill" },
+    { title: "California", artist: "Phantom Planet", movie: "The O.C." },
+    { title: "Save Me", artist: "Remy Zero", movie: "Smallville" },
+    { title: "Where You Lead", artist: "Carole King", movie: "Gilmore Girls" },
+    { title: "Boss of Me", artist: "They Might Be Giants", movie: "Malcolm in the Middle" },
+    { title: "Unwritten", artist: "Natasha Bedingfield", movie: "The Hills" },
+    { title: "Leave It All to Me", artist: "Miranda Cosgrove", movie: "iCarly" },
+    { title: "Make It Shine", artist: "Victoria Justice", movie: "Victorious" },
+    { title: "The Best of Both Worlds", artist: "Miley Cyrus", movie: "Hannah Montana" },
+    { title: "Everything Is Not What It Seems", artist: "Selena Gomez", movie: "Wizards of Waverly Place" },
+    { title: "Phineas and Ferb Theme", artist: "Bowling For Soup", movie: "Phineas and Ferb" },
+    { title: "SpongeBob SquarePants Theme", artist: "Patrick Pinney", movie: "SpongeBob SquarePants" },
+    { title: "Adventure Time", artist: "Pendleton Ward", movie: "Adventure Time" },
+    { title: "Rick and Morty Theme", artist: "Ryan Elder", movie: "Rick and Morty" }
+  ],
+  classic_tv: [ // 20-50 Years Ago (70s, 80s, 90s)
+    { title: "I'll Be There for You", artist: "The Rembrandts", movie: "Friends" },
+    { title: "Seinfeld Theme", artist: "Jonathan Wolff", movie: "Seinfeld" },
+    { title: "Where Everybody Knows Your Name", artist: "Gary Portnoy", movie: "Cheers" },
+    { title: "Thank You for Being a Friend", artist: "Cynthia Fee", movie: "The Golden Girls" },
+    { title: "Everywhere You Look", artist: "Jesse Frederick", movie: "Full House" },
+    { title: "Fresh Prince of Bel-Air", artist: "Will Smith", movie: "The Fresh Prince of Bel-Air" },
+    { title: "Saved by the Bell", artist: "Michael Damian", movie: "Saved by the Bell" },
+    { title: "The Simpsons Theme", artist: "Danny Elfman", movie: "The Simpsons" },
+    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files" },
+    { title: "Twin Peaks Theme", artist: "Angelo Badalamenti", movie: "Twin Peaks" },
+    { title: "Law & Order", artist: "Mike Post", movie: "Law & Order" },
+    { title: "Suicide Is Painless", artist: "Johnny Mandel", movie: "M*A*S*H" },
+    { title: "Angela", artist: "Bob James", movie: "Taxi" },
+    { title: "Movin' On Up", artist: "Ja'net Dubois", movie: "The Jeffersons" },
+    { title: "Good Times", artist: "Jim Gilstrap", movie: "Good Times" },
+    { title: "Sanford and Son Theme", artist: "Quincy Jones", movie: "Sanford and Son" },
+    { title: "Those Were the Days", artist: "Carroll O'Connor", movie: "All in the Family" },
+    { title: "Love is All Around", artist: "Sonny Curtis", movie: "The Mary Tyler Moore Show" },
+    { title: "Happy Days", artist: "Pratt & McClain", movie: "Happy Days" },
+    { title: "Making Our Dreams Come True", artist: "Cyndi Grecco", movie: "Laverne & Shirley" },
+    { title: "Come and Knock on Our Door", artist: "Ray Charles", movie: "Three's Company" },
+    { title: "It Takes Diff'rent Strokes", artist: "Alan Thicke", movie: "Diff'rent Strokes" },
+    { title: "Facts of Life", artist: "Gloria Loring", movie: "The Facts of Life" },
+    { title: "As Long As We Got Each Other", artist: "B.J. Thomas", movie: "Growing Pains" },
+    { title: "Without Us", artist: "Johnny Mathis", movie: "Family Ties" },
+    { title: "Believe It or Not", artist: "Joey Scarbury", movie: "The Greatest American Hero" },
+    { title: "Theme from Magnum P.I.", artist: "Mike Post", movie: "Magnum, P.I." },
+    { title: "Miami Vice Theme", artist: "Jan Hammer", movie: "Miami Vice" },
+    { title: "Knight Rider Theme", artist: "Stu Phillips", movie: "Knight Rider" },
+    { title: "The A-Team Theme", artist: "Mike Post", movie: "The A-Team" },
+    { title: "MacGyver Theme", artist: "Randy Edelman", movie: "MacGyver" },
+    { title: "Hawaii Five-O", artist: "The Ventures", movie: "Hawaii Five-O" },
+    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible (TV)" },
+    { title: "Batman Theme", artist: "Neal Hefti", movie: "Batman (1966)" },
+    { title: "The Brady Bunch", artist: "Peppermint Trolley Company", movie: "The Brady Bunch" },
+    { title: "The Addams Family", artist: "Vic Mizzy", movie: "The Addams Family" },
+    { title: "The Munsters", artist: "Jack Marshall", movie: "The Munsters" },
+    { title: "I Dream of Jeannie", artist: "Hugo Montenegro", movie: "I Dream of Jeannie" },
+    { title: "Bewitched", artist: "Howard Greenfield", movie: "Bewitched" },
+    { title: "Gilligan's Island", artist: "The Wellingtons", movie: "Gilligan's Island" },
+    { title: "Scooby-Doo, Where Are You!", artist: "Larry Marks", movie: "Scooby-Doo" },
+    { title: "The Flintstones", artist: "Hoyt Curtin", movie: "The Flintstones" },
+    { title: "The Jetsons", artist: "Hoyt Curtin", movie: "The Jetsons" },
+    { title: "DuckTales Theme", artist: "Jeff Pescetto", movie: "DuckTales" },
+    { title: "Teenage Mutant Ninja Turtles", artist: "Chuck Lorre", movie: "Teenage Mutant Ninja Turtles" },
+    { title: "Pokemon Theme", artist: "Jason Paige", movie: "Pokemon" },
+    { title: "Mighty Morphin Power Rangers", artist: "Ron Wasserman", movie: "Power Rangers" },
+    { title: "Baywatch Theme", artist: "Jimi Jamison", movie: "Baywatch" },
+    { title: "Bad Boys", artist: "Inner Circle", movie: "Cops" },
+    { title: "In the Street", artist: "Cheap Trick", movie: "That '70s Show" }
   ],
   scifi: [
     { title: "Main Title", artist: "John Williams", movie: "Star Wars: A New Hope" },
@@ -379,14 +524,12 @@ const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
     );
     
     if (!response.ok) {
-        // Return the specific API error so the user knows what went wrong
         return { score: 0, reason: `API Error ${response.status}: ${response.statusText}` };
     }
 
     const data = await response.json();
     const result = JSON.parse(data.candidates[0].content.parts[0].text);
     
-    // Ensure result is an object with a score
     if (typeof result !== 'object' || typeof result.score !== 'number') {
         return { score: 0, reason: "AI verification failed: Invalid response format" };
     }
@@ -490,18 +633,17 @@ const HostView = ({ gameId, user }) => {
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [spotifyToken, setSpotifyToken] = useState("");
-  const [category, setCategory] = useState("classics");
-  const [audioPreview, setAudioPreview] = useState(null);
+  const [category, setCategory] = useState("all_stars");
+  const [totalRounds, setTotalRounds] = useState(10);
   const [showSettings, setShowSettings] = useState(true);
   const audioRef = useRef(null);
   const [verification, setVerification] = useState(null);
 
-  // Load Game
+  // Load Game & Players
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (docSnap) => {
       if (docSnap.exists()) setGame(docSnap.data());
     });
-    // Load Players subcollection (simulated with top-level field for simplicity in this demo, but let's use a subcollection for robustness)
     const unsubPlayers = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players'), (snap) => {
       const pList = [];
       snap.forEach(d => pList.push({id: d.id, ...d.data()}));
@@ -516,11 +658,23 @@ const HostView = ({ gameId, user }) => {
       if (game?.status === 'playing' && game?.currentSong?.previewUrl && !game?.buzzerWinner) {
         audioRef.current.src = game.currentSong.previewUrl;
         audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
-      } else if (game?.buzzerWinner || game?.status === 'revealed') {
+      } else if (game?.buzzerWinner || game?.status === 'revealed' || game?.status === 'game_over') {
         audioRef.current.pause();
       }
     }
   }, [game?.currentSong, game?.status, game?.buzzerWinner]);
+
+  // Skip Logic Watcher
+  useEffect(() => {
+    if (game?.status === 'playing' && game.skips && players.length > 0) {
+      const activePlayerCount = players.length;
+      const skipCount = game.skips.length;
+      if ((skipCount / activePlayerCount) > 0.75) {
+         giveUp(); // "Give up" effectively skips/reveals
+      }
+    }
+  }, [game?.skips, players.length, game?.status]);
+
 
   // Gemini Verification Effect
   useEffect(() => {
@@ -528,26 +682,36 @@ const HostView = ({ gameId, user }) => {
       const verify = async () => {
         setVerification({ status: 'checking' });
         
-        const apiKey = initialGeminiKey; // Runtime environment will inject key if configured, otherwise user receives error
+        const apiKey = initialGeminiKey; 
         const res = await verifyAnswerWithGemini(game.currentAnswer, game.currentSong.movie, apiKey); 
         
         setVerification(res);
         
-        // Update Game with result
         const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
         const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', game.buzzerWinner.uid);
-        
-        // Ensure score is defined before transaction
         const scoreToAdd = (typeof res.score === 'number') ? res.score : 0;
 
         await runTransaction(db, async (transaction) => {
-           transaction.update(gameRef, { 
-             answerVerified: true,
-             lastRoundScore: scoreToAdd,
-             status: 'revealed'
-           });
            if (scoreToAdd > 0) {
-             transaction.update(playerRef, { score: increment(scoreToAdd) });
+               // Correct Answer: End Round
+               transaction.update(gameRef, { 
+                 answerVerified: true,
+                 lastRoundScore: scoreToAdd,
+                 status: 'revealed'
+               });
+               transaction.update(playerRef, { score: increment(scoreToAdd) });
+           } else {
+               // Incorrect Answer: Reset buzzer so others can try
+               transaction.update(gameRef, {
+                   buzzerWinner: null,
+                   buzzerLocked: false,
+                   currentAnswer: null,
+                   answerVerified: false,
+                   attemptedThisRound: arrayUnion(game.buzzerWinner.uid),
+                   feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!`
+               });
+               // Clear feedback after 3s (optional, but good UX)
+               setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
            }
         });
       };
@@ -560,40 +724,64 @@ const HostView = ({ gameId, user }) => {
     setShowSettings(false);
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
       status: 'playing',
-      round: 0
+      round: 0,
+      totalRounds: totalRounds,
+      playedSongs: [], // Track history
+      skips: [],
+      winner: null,
+      buzzerWinner: null,
+      currentAnswer: null,
+      answerVerified: false,
+      currentSong: null,
+      attemptedThisRound: [],
+      feedbackMessage: null
     });
     nextRound();
   };
 
   const nextRound = async () => {
     setVerification(null);
-    const trackData = CATEGORIES[category][Math.floor(Math.random() * CATEGORIES[category].length)];
+    
+    // Check if Game Over
+    if (game?.round >= game?.totalRounds) {
+        // Calculate winner
+        const winner = players.length > 0 ? players[0] : null; 
+        
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+            status: 'game_over',
+            winner: winner ? { uid: winner.id, username: winner.username, score: winner.score } : null
+        });
+        return;
+    }
+
+    // Filter used songs
+    const allSongs = CATEGORIES[category];
+    const usedTitles = game?.playedSongs || [];
+    const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
+
+    if (availableSongs.length === 0) {
+        alert("Ran out of unique songs in this category!");
+        return;
+    }
+
+    const trackData = availableSongs[Math.floor(Math.random() * availableSongs.length)];
     
     // Fetch audio url
-    let previewUrl = null;
-    let coverArt = null;
-
-    if (spotifyToken) {
-       // Advanced: Control Spotify Device (omitted for brevity, requires complex device ID handling)
-       // For this demo, we'll assume iTunes fallback unless we built a full Spotify Player 
-    } 
-    
-    // Always fallback to iTunes for the audio source if not fully integrated
     const itunesData = await searchItunes(`${trackData.title} ${trackData.artist} soundtrack`);
-    previewUrl = itunesData?.previewUrl;
-    coverArt = itunesData?.artworkUrl100?.replace('100x100', '600x600');
+    const previewUrl = itunesData?.previewUrl || null;
+    const coverArt = itunesData?.artworkUrl100?.replace('100x100', '600x600') || null;
 
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-      currentSong: {
-        ...trackData,
-        previewUrl,
-        coverArt
-      },
+      currentSong: { ...trackData, previewUrl, coverArt },
       buzzerWinner: null,
       currentAnswer: null,
       answerVerified: false,
       status: 'playing',
-      round: increment(1)
+      round: increment(1),
+      playedSongs: arrayUnion(trackData.title),
+      skips: [],
+      attemptedThisRound: [], // Reset attempts
+      feedbackMessage: null
     });
   };
 
@@ -603,6 +791,16 @@ const HostView = ({ gameId, user }) => {
        lastRoundScore: 0,
        buzzerWinner: null // No winner
      });
+  };
+
+  const handleNewGame = async () => {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+          status: 'lobby',
+          winner: null,
+          currentSong: null,
+          buzzerWinner: null
+      });
+      setShowSettings(true);
   };
 
   if (showSettings) {
@@ -619,16 +817,29 @@ const HostView = ({ gameId, user }) => {
           
           <div>
              <label className="block text-sm font-bold mb-2 text-slate-400">CATEGORY</label>
-             <div className="grid grid-cols-3 gap-2">
+             <div className="grid grid-cols-2 gap-2 mb-4">
                {Object.keys(CATEGORIES).map(c => (
                  <button 
                    key={c}
                    onClick={() => setCategory(c)}
                    className={`p-2 rounded capitalize font-bold text-xs md:text-sm ${category === c ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 hover:bg-slate-600'}`}
                  >
-                   {c}
+                   {c.replace('_', ' ')}
                  </button>
                ))}
+             </div>
+             
+             <label className="block text-sm font-bold mb-2 text-slate-400">NUMBER OF SONGS</label>
+             <div className="flex gap-2">
+                {[10, 25, 50].map(num => (
+                    <button
+                        key={num}
+                        onClick={() => setTotalRounds(num)}
+                        className={`flex-1 p-2 rounded font-bold ${totalRounds === num ? 'bg-green-600 ring-2 ring-green-400' : 'bg-slate-700'}`}
+                    >
+                        {num}
+                    </button>
+                ))}
              </div>
           </div>
 
@@ -676,10 +887,13 @@ const HostView = ({ gameId, user }) => {
        {/* Top Bar */}
        <div className="bg-slate-900 p-4 shadow-lg flex justify-between items-center border-b border-slate-800">
           <div className="flex items-center gap-4">
-             <div className="bg-blue-600 px-3 py-1 rounded font-bold text-sm">ROUND {game?.round}</div>
+             <div className="bg-blue-600 px-3 py-1 rounded font-bold text-sm">ROUND {game?.round} / {game?.totalRounds}</div>
              <div className="text-slate-400 font-mono text-xl">{gameId}</div>
           </div>
-          <button onClick={() => setShowSettings(true)} className="text-xs text-slate-500 hover:text-white">Settings</button>
+          <div className="flex gap-2">
+             <button onClick={giveUp} className="px-3 py-1 bg-slate-800 text-slate-300 text-xs rounded hover:bg-slate-700">Skip Song</button>
+             <button onClick={() => setShowSettings(true)} className="text-xs text-slate-500 hover:text-white">Settings</button>
+          </div>
        </div>
 
        <div className="flex-1 flex flex-col md:flex-row">
@@ -699,10 +913,43 @@ const HostView = ({ gameId, user }) => {
                 
                 {/* Status Indicator */}
                 <div className="mb-8">
+                   {/* Feedback Toast */}
+                   {game?.feedbackMessage && (
+                       <div className="absolute top-0 left-0 right-0 p-4 flex justify-center z-50 animate-bounce-short">
+                           <div className="bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg">
+                               {game.feedbackMessage}
+                           </div>
+                       </div>
+                   )}
+
+                   {/* GAME OVER STATE */}
+                   {game?.status === 'game_over' && (
+                       <div className="bg-slate-900/90 p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
+                           <Trophy size={80} className="text-yellow-400 mx-auto mb-4" />
+                           <h1 className="text-4xl font-black mb-2">GAME OVER</h1>
+                           <div className="text-2xl mb-8">
+                               Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
+                               <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
+                           </div>
+                           <button 
+                             onClick={handleNewGame}
+                             className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"
+                           >
+                             <RefreshCw size={20}/> Setup New Game
+                           </button>
+                       </div>
+                   )}
+
+                   {/* PLAYING STATE */}
                    {game?.status === 'playing' && !game?.buzzerWinner && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
                         <Volume2 size={64} className="mb-4" />
                         <h2 className="text-3xl font-bold">Listen Closely...</h2>
+                        <div className="mt-4 flex gap-2">
+                             {game.skips?.length > 0 && (
+                                 <span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>
+                             )}
+                        </div>
                      </div>
                    )}
 
@@ -743,16 +990,6 @@ const HostView = ({ gameId, user }) => {
                      </div>
                    )}
                 </div>
-                
-                {/* Control Panel for Host if Stuck */}
-                {game?.status === 'playing' && !game?.buzzerWinner && (
-                  <button 
-                    onClick={giveUp}
-                    className="mt-12 text-slate-500 hover:text-white text-sm underline"
-                  >
-                    Reveal Answer (Skip)
-                  </button>
-                )}
              </div>
           </div>
 
@@ -781,40 +1018,36 @@ const HostView = ({ gameId, user }) => {
 // 3. PLAYER SCREEN
 const PlayerView = ({ gameId, user, username }) => {
   const [game, setGame] = useState(null);
+  const [myScore, setMyScore] = useState(0);
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
 
   useEffect(() => {
-    // If running in debug/split mode, we need to be careful about not resetting state 
-    // if the host component updates the game object.
-    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (snap) => {
+    // Game Listener
+    const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setGame(data);
-        // Only reset answer state if round changed significantly or we are in a fresh 'playing' state
-        // We use a simple check: if we moved to playing and answer is still set from previous round
         if (data.status === 'playing' && !data.buzzerWinner && hasAnswered) {
            setAnswer("");
            setHasAnswered(false);
         }
-        // Also reset if we just started fresh
-        if (data.status === 'playing' && !data.buzzerWinner && answer !== "" && !hasAnswered) {
-             setAnswer("");
-        }
       }
     });
-    return () => unsub();
-  }, [gameId, hasAnswered]); // Add hasAnswered to dep to ensure we catch reset
+
+    // My Score Listener
+    const unsubPlayer = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', user.uid), (snap) => {
+        if (snap.exists()) setMyScore(snap.data().score);
+    });
+
+    return () => { unsubGame(); unsubPlayer(); };
+  }, [gameId, hasAnswered, user.uid]);
 
   const buzzIn = async () => {
     if (!game || game.buzzerWinner || game.status !== 'playing') return;
     
-    // Optimistic UI handled by Firestore transaction ideally, but simple update here
-    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-    
-    // We try to update. If someone else buzzed first, this condition won't match in a transaction
-    // Simpler: runTransaction
     await runTransaction(db, async (transaction) => {
+      const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
       const sfDoc = await transaction.get(gameRef);
       if (!sfDoc.exists()) return;
       
@@ -836,14 +1069,68 @@ const PlayerView = ({ gameId, user, username }) => {
     });
   };
 
+  const voteSkip = async () => {
+      if (game.skips?.includes(user.uid)) return; // Already voted
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+          skips: arrayUnion(user.uid)
+      });
+  };
+
   // -- RENDER STATES --
 
-  // 1. Waiting for Round
   if (!game) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
 
-  // 2. Someone Else Buzzed
+  const isLockedOut = game.attemptedThisRound?.includes(user.uid);
   const isMe = game.buzzerWinner?.uid === user.uid;
   
+  // 1. GAME OVER - Victory or Defeat
+  if (game.status === 'game_over') {
+       const isWinner = game.winner?.uid === user.uid;
+       if (isWinner) {
+           return (
+               <div className="min-h-screen bg-gradient-to-b from-yellow-600 to-yellow-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                   <Trophy size={120} className="text-yellow-200 mb-6 animate-bounce" />
+                   <h1 className="text-6xl font-black mb-4 drop-shadow-xl">VICTORY!</h1>
+                   <div className="text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl">
+                       Final Score: {myScore}
+                   </div>
+                   <div className="mt-8 flex gap-2">
+                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
+                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
+                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
+                   </div>
+               </div>
+           );
+       } else {
+           return (
+               <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                   <h1 className="text-4xl font-black mb-4 text-slate-500">GAME OVER</h1>
+                   <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-sm">
+                       <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Winner</div>
+                       <div className="text-3xl font-bold text-yellow-500 mb-6">{game.winner?.username}</div>
+                       
+                       <div className="border-t border-slate-700 pt-6">
+                           <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Your Score</div>
+                           <div className="text-2xl font-bold">{myScore}</div>
+                       </div>
+                   </div>
+                   <p className="mt-8 text-slate-500 animate-pulse">Waiting for host...</p>
+               </div>
+           );
+       }
+  }
+
+  // 2. Locked Out (Guessed Wrong already)
+  if (isLockedOut && !game.buzzerWinner && game.status === 'playing') {
+       return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+            <h1 className="text-2xl font-bold text-red-400 mb-2">Incorrect!</h1>
+            <p className="text-slate-400">You are locked out until the next song.</p>
+        </div>
+       );
+  }
+
+  // 3. Someone Else Buzzed
   if (game.buzzerWinner && !isMe && game.status !== 'revealed') {
     return (
       <div className="min-h-screen bg-red-900/20 flex flex-col items-center justify-center p-6 text-center">
@@ -856,7 +1143,7 @@ const PlayerView = ({ gameId, user, username }) => {
     );
   }
 
-  // 3. I Buzzed! Input time.
+  // 4. I Buzzed! Input time.
   if (isMe && game.status !== 'revealed') {
     return (
       <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
@@ -879,10 +1166,6 @@ const PlayerView = ({ gameId, user, username }) => {
                  >
                    SUBMIT
                  </button>
-                 {/* Mic Button simulation */}
-                 <button className="bg-green-800 text-white p-4 rounded-xl">
-                   <Mic />
-                 </button>
                </div>
              </>
            ) : (
@@ -895,7 +1178,7 @@ const PlayerView = ({ gameId, user, username }) => {
     );
   }
 
-  // 4. Reveal / Result
+  // 5. Reveal / Result
   if (game.status === 'revealed') {
     const scoreText = game.lastRoundScore > 0 ? `+${game.lastRoundScore}` : "0";
     const winnerText = game.lastRoundScore > 0 ? "Correct!" : "Wrong!";
@@ -924,13 +1207,34 @@ const PlayerView = ({ gameId, user, username }) => {
     );
   }
 
-  // 5. Default Buzzer State
+  // 6. Default Buzzer State
+  const votedSkip = game.skips?.includes(user.uid);
+  
   return (
-    <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col">
-       <div className="p-4 flex justify-between items-center text-slate-500 text-sm">
-         <span>Room: {gameId}</span>
-         <span>{username}</span>
+    <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative">
+       {/* Player HUD */}
+       <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10">
+           <div>
+               <div className="text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
+               <div className="text-xl font-black text-blue-400">{myScore}</div>
+           </div>
+           <div className="text-center">
+               <div className="text-xs text-slate-400 uppercase font-bold tracking-widest">Room</div>
+               <div className="font-mono">{gameId}</div>
+           </div>
+           <div className="text-right">
+               <div className="text-xs text-slate-400 uppercase font-bold tracking-widest">Song</div>
+               <div className="text-xl font-bold">{game.round}/{game.totalRounds}</div>
+           </div>
        </div>
+
+       {game.feedbackMessage && (
+           <div className="absolute top-20 left-0 right-0 p-4 flex justify-center z-50 animate-bounce-short">
+               <div className="bg-red-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm text-center">
+                   {game.feedbackMessage}
+               </div>
+           </div>
+       )}
        
        <div className="flex-1 flex flex-col items-center justify-center relative">
           <button 
@@ -940,6 +1244,18 @@ const PlayerView = ({ gameId, user, username }) => {
              <span className="text-6xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
           </button>
           <p className="mt-8 text-slate-400 font-medium animate-pulse">Wait for the music...</p>
+       </div>
+
+       {/* Bottom Actions */}
+       <div className="p-6">
+           <button 
+             onClick={voteSkip}
+             disabled={votedSkip}
+             className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${votedSkip ? 'bg-slate-700 text-slate-500' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+           >
+               <FastForward size={20} />
+               {votedSkip ? "Voted to Skip" : "Vote to Skip Song"}
+           </button>
        </div>
     </div>
   );
