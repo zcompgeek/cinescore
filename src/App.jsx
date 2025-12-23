@@ -432,58 +432,6 @@ const CATEGORIES = {
     { title: "Spider-Man", artist: "Paul Francis Webster", movie: "Spider-Man: Into the Spider-Verse" },
     { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
     { title: "What's Up Danger", artist: "Blackway", movie: "Spider-Man: Into the Spider-Verse" }
-  ],
-  horror: [
-    { title: "Halloween Theme", artist: "John Carpenter", movie: "Halloween" },
-    { title: "Tubular Bells", artist: "Mike Oldfield", movie: "The Exorcist" },
-    { title: "Psycho Prelude", artist: "Bernard Herrmann", movie: "Psycho" },
-    { title: "Jaws Theme", artist: "John Williams", movie: "Jaws" },
-    { title: "Ave Satani", artist: "Jerry Goldsmith", movie: "The Omen" },
-    { title: "Suspiria", artist: "Goblin", movie: "Suspiria" },
-    { title: "Rosemary's Baby", artist: "Krzysztof Komeda", movie: "Rosemary's Baby" },
-    { title: "The Shining Theme", artist: "Wendy Carlos", movie: "The Shining" },
-    { title: "A Nightmare on Elm Street", artist: "Charles Bernstein", movie: "A Nightmare on Elm Street" },
-    { title: "Friday the 13th", artist: "Harry Manfredini", movie: "Friday the 13th" },
-    { title: "Hello Zepp", artist: "Charlie Clouser", movie: "Saw" },
-    { title: "Candyman", artist: "Philip Glass", movie: "Candyman" },
-    { title: "Hellraiser", artist: "Christopher Young", movie: "Hellraiser" },
-    { title: "Phantasm", artist: "Fred Myrow", movie: "Phantasm" },
-    { title: "The Fog", artist: "John Carpenter", movie: "The Fog" },
-    { title: "The Thing", artist: "Ennio Morricone", movie: "The Thing" },
-    { title: "Escape from New York", artist: "John Carpenter", movie: "Escape from New York" },
-    { title: "Assault on Precinct 13", artist: "John Carpenter", movie: "Assault on Precinct 13" },
-    { title: "In the Mouth of Madness", artist: "John Carpenter", movie: "In the Mouth of Madness" },
-    { title: "Prince of Darkness", artist: "John Carpenter", movie: "Prince of Darkness" },
-    { title: "Village of the Damned", artist: "John Carpenter", movie: "Village of the Damned" },
-    { title: "Christine", artist: "John Carpenter", movie: "Christine" },
-    { title: "Pet Sematary", artist: "Ramones", movie: "Pet Sematary" },
-    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
-    { title: "Beetlejuice", artist: "Danny Elfman", movie: "Beetlejuice" },
-    { title: "Tales from the Crypt", artist: "Danny Elfman", movie: "Tales from the Crypt" },
-    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files" },
-    { title: "Twin Peaks", artist: "Angelo Badalamenti", movie: "Twin Peaks" },
-    { title: "Stranger Things", artist: "Kyle Dixon", movie: "Stranger Things" },
-    { title: "It Follows", artist: "Disasterpeace", movie: "It Follows" },
-    { title: "Hereditary", artist: "Colin Stetson", movie: "Hereditary" },
-    { title: "Midsommar", artist: "Bobby Krlic", movie: "Midsommar" },
-    { title: "The Witch", artist: "Mark Korven", movie: "The Witch" },
-    { title: "Us", artist: "Michael Abels", movie: "Us" },
-    { title: "Get Out", artist: "Michael Abels", movie: "Get Out" },
-    { title: "Nope", artist: "Michael Abels", movie: "Nope" },
-    { title: "A Quiet Place", artist: "Marco Beltrami", movie: "A Quiet Place" },
-    { title: "Bird Box", artist: "Trent Reznor", movie: "Bird Box" },
-    { title: "28 Days Later", artist: "John Murphy", movie: "28 Days Later" },
-    { title: "In the House - In a Heartbeat", artist: "John Murphy", movie: "28 Days Later" },
-    { title: "Resident Evil", artist: "Marilyn Manson", movie: "Resident Evil" },
-    { title: "Silent Hill", artist: "Akira Yamaoka", movie: "Silent Hill" },
-    { title: "The Ring", artist: "Hans Zimmer", movie: "The Ring" },
-    { title: "The Grudge", artist: "Christopher Young", movie: "The Grudge" },
-    { title: "Insidious", artist: "Joseph Bishara", movie: "Insidious" },
-    { title: "Sinister", artist: "Christopher Young", movie: "Sinister" },
-    { title: "The Conjuring", artist: "Joseph Bishara", movie: "The Conjuring" },
-    { title: "Annabelle", artist: "Joseph Bishara", movie: "Annabelle" },
-    { title: "The Nun", artist: "Abel Korzeniowski", movie: "The Nun" },
-    { title: "Scream", artist: "Marco Beltrami", movie: "Scream" }
   ]
 };
 
@@ -567,7 +515,7 @@ const Landing = ({ setMode, joinGame }) => {
         <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-600 rounded-full blur-[100px]"></div>
       </div>
 
-      <div className="z-10 text-center max-w-md w-full">
+      <div className="z-10 text-center max-w-md md:max-w-2xl w-full">
         <div className="mb-8 flex justify-center">
           <div className="bg-gradient-to-tr from-purple-500 to-blue-500 p-4 rounded-2xl shadow-2xl">
             <Music size={48} className="text-white" />
@@ -816,7 +764,7 @@ const HostView = ({ gameId, user }) => {
     return (
       <div className="min-h-screen bg-slate-900 text-white p-4 md:p-6 flex flex-col items-center">
         <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
-        <div className="bg-slate-800 p-4 md:p-6 rounded-xl max-w-lg w-full space-y-6 border border-slate-700">
+        <div className="bg-slate-800 p-4 md:p-6 rounded-xl max-w-lg md:max-w-3xl w-full space-y-6 border border-slate-700">
           <div>
             <label className="block text-sm font-bold mb-2 text-slate-400">GAME CODE</label>
             <div className="text-4xl font-mono font-black text-center bg-black/30 p-4 rounded-lg tracking-widest text-blue-400">
@@ -908,7 +856,7 @@ const HostView = ({ gameId, user }) => {
                 />
              )}
 
-             <div className="z-10 w-full max-w-2xl text-center">
+             <div className="z-10 w-full max-w-4xl text-center">
                 
                 {/* Status Indicator */}
                 <div className="mb-4 md:mb-8">
@@ -1152,7 +1100,7 @@ const PlayerView = ({ gameId, user, username }) => {
              <>
                <input 
                  autoFocus
-                 className="w-full p-4 rounded-xl text-black text-xl font-bold text-center uppercase"
+                 className="w-full bg-white p-4 rounded-xl text-black text-xl font-bold text-center uppercase placeholder:text-gray-500"
                  placeholder="MOVIE TITLE?"
                  value={answer}
                  onChange={e => setAnswer(e.target.value)}
