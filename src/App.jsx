@@ -3,7 +3,8 @@ import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   signInAnonymously, 
-  onAuthStateChanged
+  onAuthStateChanged,
+  signInWithCustomToken
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -1138,7 +1139,7 @@ const HostView = ({ gameId, user }) => {
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short">
                         {buzzerPlayer?.avatar ? (
                             <div className="mb-6 bg-slate-800 p-2 rounded-full shadow-2xl">
-                              <img src={buzzerPlayer.avatar} className="w-48 h-48 md:w-96 md:h-96 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
+                              <img src={buzzerPlayer.avatar} className="w-64 h-64 md:w-96 md:h-96 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
                             </div>
                         ) : (
                             <AlertCircle size={80} className="mb-6 md:w-32 md:h-32" />
@@ -1533,14 +1534,36 @@ export default function App() {
   const [mode, setMode] = useState(null); // 'host' | 'player'
   const [gameId, setGameId] = useState(null);
   const [username, setUsername] = useState("");
+  const [authError, setAuthError] = useState(null);
 
   // Auth Init
   useEffect(() => {
+    if (firebaseConfig.apiKey === "REPLACE_WITH_YOUR_API_KEY") {
+        setAuthError("Configuration Missing: Please set up your Firebase keys in the code.");
+        return;
+    }
+
+    let mounted = true;
     const initAuth = async () => {
-      await signInAnonymously(auth);
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+           await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+           await signInAnonymously(auth);
+        }
+      } catch (e) {
+        console.error("Auth failed", e);
+        if (mounted) setAuthError(e.message);
+      }
     };
     initAuth();
-    return onAuthStateChanged(auth, u => setUser(u));
+    const unsub = onAuthStateChanged(auth, u => {
+        if (mounted) setUser(u);
+    });
+    return () => {
+        mounted = false;
+        unsub();
+    }
   }, []);
 
   const handleCreateGame = async () => {
@@ -1582,7 +1605,16 @@ export default function App() {
     }
   };
 
-  if (!user) return <div className="h-screen bg-slate-950 flex items-center justify-center text-slate-500">Connecting to CineScore...</div>;
+  if (authError) return (
+      <div className="h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6 text-center">
+          <AlertCircle className="text-red-500 mb-4" size={48} />
+          <h2 className="text-2xl font-bold mb-2">Connection Error</h2>
+          <p className="text-slate-400 mb-4">{authError}</p>
+          <p className="text-sm text-slate-600">If running locally, check your firebaseConfig settings.</p>
+      </div>
+  );
+
+  if (!user) return <div className="h-screen bg-slate-950 flex items-center justify-center text-slate-500 animate-pulse">Connecting to CineScore...</div>;
 
   if (mode === 'host' && gameId) return <HostView gameId={gameId} user={user} />;
   if (mode === 'player' && gameId) return <PlayerView gameId={gameId} user={user} username={username} />;
