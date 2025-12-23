@@ -18,7 +18,7 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Trash2, PenTool } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Trash2, PenTool, History, ArrowLeft } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -681,6 +681,7 @@ const HostView = ({ gameId, user }) => {
   const [category, setCategory] = useState("all_stars");
   const [totalRounds, setTotalRounds] = useState(10);
   const [showSettings, setShowSettings] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const audioRef = useRef(null);
   const [verification, setVerification] = useState(null);
 
@@ -825,7 +826,7 @@ const HostView = ({ gameId, user }) => {
       status: 'playing',
       round: 1, // Start directly at round 1
       totalRounds: totalRounds,
-      playedSongs: [trackData.title], // Initialize history
+      playedSongs: [], // Initialize history to empty array
       skips: [],
       winner: null,
       buzzerWinner: null,
@@ -834,6 +835,16 @@ const HostView = ({ gameId, user }) => {
       currentSong: { ...trackData, previewUrl, coverArt },
       attemptedThisRound: [],
       feedbackMessage: null
+    });
+    
+    // Add first song to playedSongs immediately so it shows in history
+    batch.update(gameRef, {
+        playedSongs: arrayUnion({
+            title: trackData.title,
+            artist: trackData.artist,
+            movie: trackData.movie,
+            coverArt: coverArt
+        })
     });
     
     await batch.commit();
@@ -856,7 +867,9 @@ const HostView = ({ gameId, user }) => {
 
     // Filter used songs
     const allSongs = CATEGORIES[category];
-    const usedTitles = game?.playedSongs || [];
+    const playedSongs = game?.playedSongs || [];
+    // Handle potential legacy string data just in case
+    const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
     const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
 
     if (availableSongs.length === 0) {
@@ -878,7 +891,12 @@ const HostView = ({ gameId, user }) => {
       answerVerified: false,
       status: 'playing',
       round: increment(1),
-      playedSongs: arrayUnion(trackData.title),
+      playedSongs: arrayUnion({
+          title: trackData.title,
+          artist: trackData.artist,
+          movie: trackData.movie,
+          coverArt: coverArt
+      }),
       skips: [],
       attemptedThisRound: [], // Reset attempts
       feedbackMessage: null
@@ -901,6 +919,7 @@ const HostView = ({ gameId, user }) => {
           buzzerWinner: null
       });
       setShowSettings(true);
+      setShowHistory(false);
   };
   
   // Helper to get player details
@@ -1038,21 +1057,62 @@ const HostView = ({ gameId, user }) => {
 
                    {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
-                       <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
-                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
-                           <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
-                           <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
-                           <div className="text-xl md:text-2xl mb-6 md:mb-8">
-                               Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
-                               <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
+                       showHistory ? (
+                           <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-fade-in w-full h-[600px] flex flex-col">
+                               <h2 className="text-3xl font-bold mb-4 flex items-center gap-2 justify-center"><History /> Game History</h2>
+                               <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                                   {game.playedSongs && game.playedSongs.length > 0 ? (
+                                       game.playedSongs.map((song, i) => (
+                                           <div key={i} className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg">
+                                               {typeof song === 'object' ? (
+                                                   <>
+                                                       <img src={song.coverArt || "https://placehold.co/100"} className="w-12 h-12 rounded object-cover bg-slate-700" />
+                                                       <div className="text-left">
+                                                           <div className="font-bold text-white">{song.movie}</div>
+                                                           <div className="text-sm text-slate-400">{song.title}</div>
+                                                       </div>
+                                                   </>
+                                               ) : (
+                                                   <span className="text-slate-400">{song}</span> // Fallback for old data
+                                               )}
+                                           </div>
+                                       ))
+                                   ) : (
+                                       <div className="text-slate-500 italic">No history available</div>
+                                   )}
+                               </div>
+                               <button 
+                                 onClick={() => setShowHistory(false)}
+                                 className="mt-6 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                               >
+                                 <ArrowLeft size={20} /> Back to Results
+                               </button>
                            </div>
-                           <button 
-                             onClick={handleNewGame}
-                             className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"
-                           >
-                             <RefreshCw size={20}/> Setup New Game
-                           </button>
-                       </div>
+                       ) : (
+                           <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
+                               {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
+                               <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
+                               <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
+                               <div className="text-xl md:text-2xl mb-6 md:mb-8">
+                                   Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
+                                   <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
+                               </div>
+                               <div className="flex flex-col gap-3 max-w-xs mx-auto">
+                                   <button 
+                                     onClick={handleNewGame}
+                                     className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                                   >
+                                     <RefreshCw size={20}/> Setup New Game
+                                   </button>
+                                   <button 
+                                     onClick={() => setShowHistory(true)}
+                                     className="px-6 py-3 md:px-8 md:py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                                   >
+                                     <History size={20}/> View Song History
+                                   </button>
+                               </div>
+                           </div>
+                       )
                    )}
 
                    {/* PLAYING STATE */}
@@ -1153,6 +1213,7 @@ const PlayerView = ({ gameId, user, username }) => {
   const [myAvatar, setMyAvatar] = useState(null);
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // Player local history toggle
 
   useEffect(() => {
     // Game Listener
@@ -1164,6 +1225,8 @@ const PlayerView = ({ gameId, user, username }) => {
            setAnswer("");
            setHasAnswered(false);
         }
+        // If game resets to lobby, reset history view
+        if (data.status === 'lobby') setShowHistory(false);
       }
     });
 
@@ -1221,6 +1284,42 @@ const PlayerView = ({ gameId, user, username }) => {
   
   // 1. GAME OVER - Victory or Defeat
   if (game.status === 'game_over') {
+       // Check if user wants to see history
+       if (showHistory) {
+           return (
+               <div className="min-h-screen bg-slate-900 flex flex-col p-6 text-white">
+                   <h2 className="text-2xl font-bold mb-4 flex items-center justify-center gap-2"><History /> Song History</h2>
+                   <div className="flex-1 overflow-y-auto space-y-2 mb-4">
+                        {game.playedSongs && game.playedSongs.length > 0 ? (
+                           game.playedSongs.map((song, i) => (
+                               <div key={i} className="flex items-center gap-3 p-3 bg-slate-800 rounded-lg">
+                                   {typeof song === 'object' ? (
+                                       <>
+                                           <img src={song.coverArt || "https://placehold.co/100"} className="w-12 h-12 rounded object-cover bg-slate-700" />
+                                           <div className="text-left overflow-hidden">
+                                               <div className="font-bold truncate text-sm">{song.movie}</div>
+                                               <div className="text-xs text-slate-400 truncate">{song.title}</div>
+                                           </div>
+                                       </>
+                                   ) : (
+                                       <span className="text-slate-400">{song}</span>
+                                   )}
+                               </div>
+                           ))
+                        ) : (
+                           <div className="text-center text-slate-500 italic">No songs recorded.</div>
+                        )}
+                   </div>
+                   <button 
+                     onClick={() => setShowHistory(false)}
+                     className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                   >
+                     <ArrowLeft size={20} /> Back
+                   </button>
+               </div>
+           );
+       }
+
        const isWinner = game.winner?.uid === user.uid;
        if (isWinner) {
            return (
@@ -1230,6 +1329,15 @@ const PlayerView = ({ gameId, user, username }) => {
                    <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl">
                        Final Score: {myScore}
                    </div>
+                   
+                   {/* History Button for Winner */}
+                   <button 
+                     onClick={() => setShowHistory(true)}
+                     className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm"
+                   >
+                     <History size={16}/> View Songs
+                   </button>
+
                    <div className="mt-8 flex gap-2">
                        <Star className="text-yellow-300 animate-spin-slow" size={32}/>
                        <Star className="text-yellow-300 animate-spin-slow" size={32}/>
@@ -1248,10 +1356,17 @@ const PlayerView = ({ gameId, user, username }) => {
                            <div className="text-2xl md:text-3xl font-bold text-yellow-500">{game.winner?.username}</div>
                        </div>
                        
-                       <div className="border-t border-slate-700 pt-6">
+                       <div className="border-t border-slate-700 pt-6 mb-6">
                            <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Your Score</div>
                            <div className="text-2xl font-bold">{myScore}</div>
                        </div>
+
+                       <button 
+                         onClick={() => setShowHistory(true)}
+                         className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                       >
+                         <History size={18}/> View Song History
+                       </button>
                    </div>
                    <p className="mt-8 text-slate-500 animate-pulse">Waiting for host...</p>
                </div>
