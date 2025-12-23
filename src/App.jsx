@@ -3,8 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   signInAnonymously, 
-  onAuthStateChanged,
-  signInWithCustomToken
+  onAuthStateChanged
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -19,7 +18,7 @@ import {
   increment,
   writeBatch
 } from 'firebase/firestore';
-import { Volume2, Mic, Music, Trophy, Users, Play, SkipForward, AlertCircle, Smartphone, Film, Check, X, FastForward, RefreshCw, Star } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -880,11 +879,11 @@ const HostView = ({ gameId, user }) => {
 
   // PLAYING STATE
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col h-screen overflow-hidden">
        <audio ref={audioRef} loop />
        
        {/* Top Bar */}
-       <div className="bg-slate-900 p-4 shadow-lg flex justify-between items-center border-b border-slate-800">
+       <div className="bg-slate-900 p-4 shadow-lg flex justify-between items-center border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2 md:gap-4">
              <div className="bg-blue-600 px-2 py-1 md:px-3 md:py-1 rounded font-bold text-xs md:text-sm whitespace-nowrap">R {game?.round} / {game?.totalRounds}</div>
              <div className="text-slate-400 font-mono text-lg md:text-xl">{gameId}</div>
@@ -895,9 +894,10 @@ const HostView = ({ gameId, user }) => {
           </div>
        </div>
 
+       {/* Main Content Area - Flex Column on Mobile, Row on Desktop */}
        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           
-          {/* Main Stage */}
+          {/* Main Stage (Game Area) */}
           <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-y-auto">
              
              {/* Dynamic Background Art */}
@@ -924,7 +924,7 @@ const HostView = ({ gameId, user }) => {
                    {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
                        <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
-                           <Trophy size={60} md:size={80} className="text-yellow-400 mx-auto mb-4" />
+                           <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
                            <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
                            <div className="text-xl md:text-2xl mb-6 md:mb-8">
                                Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
@@ -942,7 +942,7 @@ const HostView = ({ gameId, user }) => {
                    {/* PLAYING STATE */}
                    {game?.status === 'playing' && !game?.buzzerWinner && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
-                        <Volume2 size={48} md:size={64} className="mb-4" />
+                        <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
                         <div className="mt-4 flex gap-2">
                              {game.skips?.length > 0 && (
@@ -954,7 +954,7 @@ const HostView = ({ gameId, user }) => {
 
                    {game?.buzzerWinner && game?.status !== 'revealed' && (
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short">
-                        <AlertCircle size={48} md:size={64} className="mb-4" />
+                        <AlertCircle size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-3xl md:text-4xl font-black">{game.buzzerWinner.username} BUZZED!</h2>
                         <p className="text-white mt-2 text-lg">Waiting for answer...</p>
                         {game.currentAnswer && <p className="mt-4 bg-slate-800 px-4 py-2 rounded">Processing: "{game.currentAnswer}"</p>}
@@ -992,17 +992,17 @@ const HostView = ({ gameId, user }) => {
              </div>
           </div>
 
-          {/* Leaderboard Sidebar */}
-          <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 p-4 md:p-6 flex flex-col h-1/3 md:h-auto overflow-hidden">
-             <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2">
+          {/* Leaderboard Sidebar - Scrollable at bottom on mobile, side on desktop */}
+          <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 p-4 md:p-6 flex flex-col h-48 md:h-auto shrink-0">
+             <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-6 flex items-center gap-2 sticky top-0 bg-slate-900 z-10">
                <Trophy className="text-yellow-500" size={20} /> Leaderboard
              </h3>
-             <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1">
+             <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1 pb-2">
                {players.map((p, idx) => (
                  <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
                     <div className="flex items-center gap-3">
                        <span className={`font-mono font-bold w-6 text-center ${idx===0 ? 'text-yellow-500' : 'text-slate-500'}`}>#{idx+1}</span>
-                       <span className="font-semibold text-sm md:text-base">{p.username}</span>
+                       <span className="font-semibold text-sm md:text-base truncate max-w-[120px]">{p.username}</span>
                     </div>
                     <span className="font-bold text-blue-400 text-sm md:text-base">{p.score}</span>
                  </div>
@@ -1088,9 +1088,9 @@ const PlayerView = ({ gameId, user, username }) => {
        if (isWinner) {
            return (
                <div className="min-h-screen bg-gradient-to-b from-yellow-600 to-yellow-900 flex flex-col items-center justify-center p-6 text-center text-white">
-                   <Trophy size={120} className="text-yellow-200 mb-6 animate-bounce" />
-                   <h1 className="text-6xl font-black mb-4 drop-shadow-xl">VICTORY!</h1>
-                   <div className="text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl">
+                   <Trophy size={80} className="text-yellow-200 mb-6 animate-bounce md:w-32 md:h-32" />
+                   <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-xl">VICTORY!</h1>
+                   <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl">
                        Final Score: {myScore}
                    </div>
                    <div className="mt-8 flex gap-2">
@@ -1103,10 +1103,10 @@ const PlayerView = ({ gameId, user, username }) => {
        } else {
            return (
                <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
-                   <h1 className="text-4xl font-black mb-4 text-slate-500">GAME OVER</h1>
+                   <h1 className="text-3xl md:text-4xl font-black mb-4 text-slate-500">GAME OVER</h1>
                    <div className="bg-slate-800 p-8 rounded-2xl w-full max-w-sm">
                        <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Winner</div>
-                       <div className="text-3xl font-bold text-yellow-500 mb-6">{game.winner?.username}</div>
+                       <div className="text-2xl md:text-3xl font-bold text-yellow-500 mb-6">{game.winner?.username}</div>
                        
                        <div className="border-t border-slate-700 pt-6">
                            <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Your Score</div>
@@ -1136,7 +1136,7 @@ const PlayerView = ({ gameId, user, username }) => {
          <div className="p-6 bg-red-600 rounded-full mb-6 animate-pulse">
            <Smartphone size={48} className="text-white"/>
          </div>
-         <h1 className="text-3xl font-black text-white mb-2">{game.buzzerWinner.username} LOCKED IN!</h1>
+         <h1 className="text-2xl md:text-3xl font-black text-white mb-2">{game.buzzerWinner.username} LOCKED IN!</h1>
          <p className="text-red-200">Wait for the next song...</p>
       </div>
     );
@@ -1193,7 +1193,7 @@ const PlayerView = ({ gameId, user, username }) => {
          <p className="text-slate-400 mb-8">{game.currentSong.title}</p>
          
          {isMe && (
-           <div className={`text-4xl font-black ${game.lastRoundScore > 0 ? 'text-green-400' : 'text-red-400'}`}>
+           <div className={`text-3xl md:text-4xl font-black ${game.lastRoundScore > 0 ? 'text-green-400' : 'text-red-400'}`}>
              {winnerText} ({scoreText})
            </div>
          )}
@@ -1210,7 +1210,7 @@ const PlayerView = ({ gameId, user, username }) => {
   const votedSkip = game.skips?.includes(user.uid);
   
   return (
-    <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative">
+    <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative h-screen">
        {/* Player HUD */}
        <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10 shrink-0">
            <div>
@@ -1238,7 +1238,7 @@ const PlayerView = ({ gameId, user, username }) => {
        <div className="flex-1 flex flex-col items-center justify-center relative p-4">
           <button 
              onClick={buzzIn}
-             className="w-64 h-64 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
+             className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
           >
              <span className="text-5xl md:text-7xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
           </button>
@@ -1246,7 +1246,7 @@ const PlayerView = ({ gameId, user, username }) => {
        </div>
 
        {/* Bottom Actions */}
-       <div className="p-4 md:p-6 shrink-0">
+       <div className="p-4 md:p-6 shrink-0 safe-area-bottom">
            <button 
              onClick={voteSkip}
              disabled={votedSkip}
@@ -1271,11 +1271,7 @@ export default function App() {
   // Auth Init
   useEffect(() => {
     const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
-      }
+      await signInAnonymously(auth);
     };
     initAuth();
     return onAuthStateChanged(auth, u => setUser(u));
