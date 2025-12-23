@@ -515,7 +515,7 @@ const Landing = ({ setMode, joinGame }) => {
         <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-600 rounded-full blur-[100px]"></div>
       </div>
 
-      <div className="z-10 text-center max-w-md md:max-w-2xl w-full">
+      <div className="z-10 text-center w-full max-w-5xl mx-auto">
         <div className="mb-8 flex justify-center">
           <div className="bg-gradient-to-tr from-purple-500 to-blue-500 p-4 rounded-2xl shadow-2xl">
             <Music size={48} className="text-white" />
@@ -526,7 +526,7 @@ const Landing = ({ setMode, joinGame }) => {
         </h1>
         <p className="text-slate-400 mb-8 text-lg">The Ultimate Soundtrack Trivia</p>
 
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-md mx-auto">
           <button 
             onClick={() => setMode('host')}
             className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
@@ -592,17 +592,23 @@ const HostView = ({ gameId, user }) => {
     return () => { unsubGame(); unsubPlayers(); };
   }, [gameId]);
 
-  // Audio Player Effect
+  // Audio Player Effect - only restarts when previewUrl changes
   useEffect(() => {
     if (audioRef.current) {
       if (game?.status === 'playing' && game?.currentSong?.previewUrl && !game?.buzzerWinner) {
-        audioRef.current.src = game.currentSong.previewUrl;
-        audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
+        // Only change src if it's new to avoid restart
+        if (audioRef.current.src !== game.currentSong.previewUrl) {
+            audioRef.current.src = game.currentSong.previewUrl;
+            audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
+        } else if (audioRef.current.paused) {
+            // Resume if it was paused but same song (e.g. slight hiccup)
+            audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
+        }
       } else if (game?.buzzerWinner || game?.status === 'revealed' || game?.status === 'game_over') {
         audioRef.current.pause();
       }
     }
-  }, [game?.currentSong, game?.status, game?.buzzerWinner]);
+  }, [game?.currentSong?.previewUrl, game?.status, game?.buzzerWinner]); // Key fix: listen to URL string
 
   // Skip Logic Watcher
   useEffect(() => {
@@ -616,7 +622,7 @@ const HostView = ({ gameId, user }) => {
   }, [game?.skips, players.length, game?.status]);
 
 
-  // Gemini Verification Effect & Auto-Advance
+  // Gemini Verification Effect & Auto-Advance Logic
   useEffect(() => {
     if (game?.currentAnswer && !game?.answerVerified && !verification) {
       const verify = async () => {
@@ -641,28 +647,52 @@ const HostView = ({ gameId, user }) => {
                });
                transaction.update(playerRef, { score: increment(scoreToAdd) });
            } else {
-               // Incorrect Answer: Reset buzzer so others can try
-               transaction.update(gameRef, {
-                   buzzerWinner: null,
-                   buzzerLocked: false,
-                   currentAnswer: null,
-                   answerVerified: false,
-                   attemptedThisRound: arrayUnion(game.buzzerWinner.uid),
-                   feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!`
-               });
-               // Clear feedback after 3s (optional, but good UX)
-               setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
+               // Incorrect Answer
+               // Check if EVERYONE has now attempted
+               const currentAttempts = game.attemptedThisRound || [];
+               // We add the current buzzer winner to the list of attempts in our check logic (it's not in DB yet)
+               const allAttempts = [...currentAttempts, game.buzzerWinner.uid];
+               // Filter players list to only active ones if needed, but simple length check works for now
+               const allFailed = allAttempts.length >= players.length;
+
+               if (allFailed) {
+                   // Everyone failed! Reveal answer.
+                   transaction.update(gameRef, {
+                       answerVerified: true,
+                       lastRoundScore: 0,
+                       status: 'revealed',
+                       feedbackMessage: "Everyone missed it! The answer is revealed."
+                   });
+               } else {
+                   // Just reset buzzer so others can try
+                   transaction.update(gameRef, {
+                       buzzerWinner: null,
+                       buzzerLocked: false,
+                       currentAnswer: null,
+                       answerVerified: false,
+                       attemptedThisRound: arrayUnion(game.buzzerWinner.uid),
+                       feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!`
+                   });
+                   // Clear feedback after 3s (optional, but good UX)
+                   setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
+               }
            }
         });
-
-        // AUTO ADVANCE if correct
-        if (scoreToAdd > 0) {
-            setTimeout(() => nextRound(), 3000);
-        }
       };
       verify();
     }
-  }, [game?.currentAnswer, game?.answerVerified]);
+  }, [game?.currentAnswer, game?.answerVerified, players.length]); // Added players.length dependency
+
+  // Universal Auto-Advance Hook
+  useEffect(() => {
+      let timer;
+      if (game?.status === 'revealed') {
+          timer = setTimeout(() => {
+              nextRound();
+          }, 3000);
+      }
+      return () => clearTimeout(timer);
+  }, [game?.status]);
 
 
   const startGame = async () => {
@@ -764,7 +794,7 @@ const HostView = ({ gameId, user }) => {
     return (
       <div className="min-h-screen bg-slate-900 text-white p-4 md:p-6 flex flex-col items-center">
         <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
-        <div className="bg-slate-800 p-4 md:p-6 rounded-xl max-w-lg md:max-w-3xl w-full space-y-6 border border-slate-700">
+        <div className="bg-slate-800 p-4 md:p-6 rounded-xl w-full max-w-6xl border border-slate-700">
           <div>
             <label className="block text-sm font-bold mb-2 text-slate-400">GAME CODE</label>
             <div className="text-4xl font-mono font-black text-center bg-black/30 p-4 rounded-lg tracking-widest text-blue-400">
@@ -772,7 +802,7 @@ const HostView = ({ gameId, user }) => {
             </div>
           </div>
           
-          <div>
+          <div className="mt-6">
              <label className="block text-sm font-bold mb-2 text-slate-400">CATEGORY</label>
              <div className="grid grid-cols-2 gap-2 mb-4">
                {Object.keys(CATEGORIES).map(c => (
@@ -800,7 +830,7 @@ const HostView = ({ gameId, user }) => {
              </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-700">
+          <div className="pt-4 border-t border-slate-700 mt-6">
             <h3 className="font-bold mb-2 flex items-center gap-2"><Users size={18}/> Players Joined ({players.length})</h3>
             <ul className="space-y-1 max-h-32 overflow-y-auto">
               {players.map(p => (
@@ -816,7 +846,7 @@ const HostView = ({ gameId, user }) => {
           <button 
             onClick={startGame}
             disabled={players.length === 0}
-            className="w-full py-4 bg-green-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform"
+            className="w-full py-4 mt-6 bg-green-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform"
           >
             Start Game
           </button>
@@ -843,10 +873,10 @@ const HostView = ({ gameId, user }) => {
        </div>
 
        {/* Main Content Area - Flex Column on Mobile, Row on Desktop */}
-       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+       <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full mx-auto">
           
           {/* Main Stage (Game Area) */}
-          <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-y-auto">
+          <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-y-auto w-full">
              
              {/* Dynamic Background Art */}
              {game?.currentSong?.coverArt && (
@@ -921,7 +951,7 @@ const HostView = ({ gameId, user }) => {
                         <div className={`p-4 rounded-xl font-bold text-lg md:text-xl mb-6 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
                            {game.lastRoundScore > 0 
                              ? `+${game.lastRoundScore} Points to ${game.buzzerWinner?.username || 'Winner'}` 
-                             : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : "Time's Up!")}
+                             : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : (game.feedbackMessage?.includes("Everyone") ? "Everyone Missed!" : "Time's Up!"))}
                         </div>
                         {/* Display error reason if score is 0 and there's an error message */}
                         {game.lastRoundScore === 0 && verification?.reason && verification.reason.includes("Error") && (
@@ -1095,7 +1125,7 @@ const PlayerView = ({ gameId, user, username }) => {
     return (
       <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
         <h1 className="text-3xl md:text-4xl font-black text-white mb-8 animate-bounce">YOU'RE UP!</h1>
-        <div className="w-full max-w-sm space-y-4">
+        <div className="w-full max-w-2xl space-y-4">
            {!hasAnswered ? (
              <>
                <input 
