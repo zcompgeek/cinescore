@@ -669,11 +669,11 @@ const HostView = ({ gameId, user }) => {
                         <div className="mt-4 flex gap-2">{game.skips?.length > 0 && (<span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>)}</div>
                      </div>
                    )}
-                   {game?.buzzerWinner && game?.status !== 'revealed' && (
+                   {game?.buzzerWinner && game?.status !== 'revealed' && game?.status !== 'game_over' && (
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short pt-8">
                         {buzzerPlayer?.avatar ? (
                             <div className="mb-6 bg-slate-800 p-2 rounded-full shadow-2xl">
-                              <img src={buzzerPlayer.avatar} className="w-56 h-56 md:w-80 md:h-80 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
+                              <img src={buzzerPlayer.avatar} className="w-64 h-64 md:w-96 md:h-96 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
                             </div>
                         ) : (
                             <AlertCircle size={80} className="mb-6 md:w-32 md:h-32" />
