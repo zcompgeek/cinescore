@@ -78,368 +78,368 @@ const db = getFirestore(app);
 // --- TRIVIA DATASETS ---
 const CATEGORIES = {
   all_stars: [ // Target: Under 40 (Millennials/Gen Z iconic hits)
-    { title: "Hedwig's Theme", artist: "John Williams", movie: "Harry Potter" },
-    { title: "My Heart Will Go On", artist: "Celine Dion", movie: "Titanic" },
-    { title: "All Star", artist: "Smash Mouth", movie: "Shrek" },
-    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King" },
-    { title: "Let It Go", artist: "Idina Menzel", movie: "Frozen" },
-    { title: "Lose Yourself", artist: "Eminem", movie: "8 Mile" },
-    { title: "I Will Always Love You", artist: "Whitney Houston", movie: "The Bodyguard" },
-    { title: "See You Again", artist: "Wiz Khalifa", movie: "Furious 7" },
-    { title: "A Thousand Years", artist: "Christina Perri", movie: "Twilight" },
-    { title: "Main Title", artist: "John Williams", movie: "Star Wars" },
-    { title: "The Imperial March", artist: "John Williams", movie: "Star Wars" },
-    { title: "He's a Pirate", artist: "Klaus Badelt", movie: "Pirates of the Caribbean" },
-    { title: "Theme from Jurassic Park", artist: "John Williams", movie: "Jurassic Park" },
-    { title: "The Avengers", artist: "Alan Silvestri", movie: "The Avengers" },
-    { title: "Spider-Man Main Title", artist: "Danny Elfman", movie: "Spider-Man" },
-    { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
-    { title: "Shallow", artist: "Lady Gaga", movie: "A Star Is Born" },
-    { title: "Happy", artist: "Pharrell Williams", movie: "Despicable Me 2" },
-    { title: "Can't Stop the Feeling!", artist: "Justin Timberlake", movie: "Trolls" },
-    { title: "Everything Is Awesome", artist: "Tegan and Sara", movie: "The Lego Movie" },
-    { title: "How Far I'll Go", artist: "Auli'i Cravalho", movie: "Moana" },
-    { title: "You've Got a Friend in Me", artist: "Randy Newman", movie: "Toy Story" },
-    { title: "Life is a Highway", artist: "Rascal Flatts", movie: "Cars" },
-    { title: "I'm Just Ken", artist: "Ryan Gosling", movie: "Barbie" },
-    { title: "Dance The Night", artist: "Dua Lipa", movie: "Barbie" },
-    { title: "City of Stars", artist: "Ryan Gosling", movie: "La La Land" },
-    { title: "The Greatest Show", artist: "Hugh Jackman", movie: "The Greatest Showman" },
-    { title: "Rewrite The Stars", artist: "Zac Efron", movie: "The Greatest Showman" },
-    { title: "Skyfall", artist: "Adele", movie: "Skyfall" },
-    { title: "No Time To Die", artist: "Billie Eilish", movie: "No Time To Die" },
-    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible" },
-    { title: "Cornfield Chase", artist: "Hans Zimmer", movie: "Interstellar" },
-    { title: "Time", artist: "Hans Zimmer", movie: "Inception" },
-    { title: "The Dark Knight Theme", artist: "Hans Zimmer", movie: "The Dark Knight" },
-    { title: "Concerning Hobbits", artist: "Howard Shore", movie: "Lord of the Rings" },
-    { title: "Theme from Schindler's List", artist: "John Williams", movie: "Schindler's List" },
-    { title: "Now We Are Free", artist: "Hans Zimmer", movie: "Gladiator" },
-    { title: "I See You", artist: "Leona Lewis", movie: "Avatar" },
-    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun" },
-    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky" },
-    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
-    { title: "Men in Black", artist: "Will Smith", movie: "Men in Black" },
-    { title: "Gangsta's Paradise", artist: "Coolio", movie: "Dangerous Minds" },
-    { title: "Kiss Me", artist: "Sixpence None The Richer", movie: "She's All That" },
-    { title: "Don't You (Forget About Me)", artist: "Simple Minds", movie: "The Breakfast Club" },
-    { title: "Footloose", artist: "Kenny Loggins", movie: "Footloose" },
-    { title: "We Don't Talk About Bruno", artist: "Encanto Cast", movie: "Encanto" },
-    { title: "Remember Me", artist: "Miguel", movie: "Coco" },
-    { title: "Hakuna Matata", artist: "Nathan Lane", movie: "The Lion King" },
-    { title: "Under the Sea", artist: "Samuel E. Wright", movie: "The Little Mermaid" }
+    { title: "Hedwig's Theme", artist: "John Williams", movie: "Harry Potter and the Sorcerer's Stone", year: 2001 },
+    { title: "My Heart Will Go On", artist: "Celine Dion", movie: "Titanic", year: 1997 },
+    { title: "All Star", artist: "Smash Mouth", movie: "Shrek", year: 2001 },
+    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King", year: 1994 },
+    { title: "Let It Go", artist: "Idina Menzel", movie: "Frozen", year: 2013 },
+    { title: "Lose Yourself", artist: "Eminem", movie: "8 Mile", year: 2002 },
+    { title: "I Will Always Love You", artist: "Whitney Houston", movie: "The Bodyguard", year: 1992 },
+    { title: "See You Again", artist: "Wiz Khalifa", movie: "Furious 7", year: 2015 },
+    { title: "A Thousand Years", artist: "Christina Perri", movie: "Twilight", year: 2008 },
+    { title: "Main Title", artist: "John Williams", movie: "Star Wars", year: 1977 },
+    { title: "The Imperial March", artist: "John Williams", movie: "The Empire Strikes Back", year: 1980 },
+    { title: "He's a Pirate", artist: "Klaus Badelt", movie: "Pirates of the Caribbean: The Curse of the Black Pearl", year: 2003 },
+    { title: "Theme from Jurassic Park", artist: "John Williams", movie: "Jurassic Park", year: 1993 },
+    { title: "The Avengers", artist: "Alan Silvestri", movie: "The Avengers", year: 2012 },
+    { title: "Spider-Man Main Title", artist: "Danny Elfman", movie: "Spider-Man", year: 2002 },
+    { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse", year: 2018 },
+    { title: "Shallow", artist: "Lady Gaga", movie: "A Star Is Born", year: 2018 },
+    { title: "Happy", artist: "Pharrell Williams", movie: "Despicable Me 2", year: 2013 },
+    { title: "Can't Stop the Feeling!", artist: "Justin Timberlake", movie: "Trolls", year: 2016 },
+    { title: "Everything Is Awesome", artist: "Tegan and Sara", movie: "The Lego Movie", year: 2014 },
+    { title: "How Far I'll Go", artist: "Auli'i Cravalho", movie: "Moana", year: 2016 },
+    { title: "You've Got a Friend in Me", artist: "Randy Newman", movie: "Toy Story", year: 1995 },
+    { title: "Life is a Highway", artist: "Rascal Flatts", movie: "Cars", year: 2006 },
+    { title: "I'm Just Ken", artist: "Ryan Gosling", movie: "Barbie", year: 2023 },
+    { title: "Dance The Night", artist: "Dua Lipa", movie: "Barbie", year: 2023 },
+    { title: "City of Stars", artist: "Ryan Gosling", movie: "La La Land", year: 2016 },
+    { title: "The Greatest Show", artist: "Hugh Jackman", movie: "The Greatest Showman", year: 2017 },
+    { title: "Rewrite The Stars", artist: "Zac Efron", movie: "The Greatest Showman", year: 2017 },
+    { title: "Skyfall", artist: "Adele", movie: "Skyfall", year: 2012 },
+    { title: "No Time To Die", artist: "Billie Eilish", movie: "No Time To Die", year: 2021 },
+    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible", year: 1996 },
+    { title: "Cornfield Chase", artist: "Hans Zimmer", movie: "Interstellar", year: 2014 },
+    { title: "Time", artist: "Hans Zimmer", movie: "Inception", year: 2010 },
+    { title: "The Dark Knight Theme", artist: "Hans Zimmer", movie: "The Dark Knight", year: 2008 },
+    { title: "Concerning Hobbits", artist: "Howard Shore", movie: "The Lord of the Rings: The Fellowship of the Ring", year: 2001 },
+    { title: "Theme from Schindler's List", artist: "John Williams", movie: "Schindler's List", year: 1993 },
+    { title: "Now We Are Free", artist: "Hans Zimmer", movie: "Gladiator", year: 2000 },
+    { title: "I See You", artist: "Leona Lewis", movie: "Avatar", year: 2009 },
+    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun", year: 1986 },
+    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III", year: 1982 },
+    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters", year: 1984 },
+    { title: "Men in Black", artist: "Will Smith", movie: "Men in Black", year: 1997 },
+    { title: "Gangsta's Paradise", artist: "Coolio", movie: "Dangerous Minds", year: 1995 },
+    { title: "Kiss Me", artist: "Sixpence None The Richer", movie: "She's All That", year: 1999 },
+    { title: "Don't You (Forget About Me)", artist: "Simple Minds", movie: "The Breakfast Club", year: 1985 },
+    { title: "Footloose", artist: "Kenny Loggins", movie: "Footloose", year: 1984 },
+    { title: "We Don't Talk About Bruno", artist: "Encanto Cast", movie: "Encanto", year: 2021 },
+    { title: "Remember Me", artist: "Miguel", movie: "Coco", year: 2017 },
+    { title: "Hakuna Matata", artist: "Nathan Lane", movie: "The Lion King", year: 1994 },
+    { title: "Under the Sea", artist: "Samuel E. Wright", movie: "The Little Mermaid", year: 1989 }
   ],
   classics: [ // Target: Ages 40-70 (Golden Era, 70s, 80s hits)
-    { title: "The Godfather Waltz", artist: "Nino Rota", movie: "The Godfather" },
-    { title: "Tara's Theme", artist: "Max Steiner", movie: "Gone with the Wind" },
-    { title: "Over the Rainbow", artist: "Judy Garland", movie: "The Wizard of Oz" },
-    { title: "Singin' in the Rain", artist: "Gene Kelly", movie: "Singin' in the Rain" },
-    { title: "As Time Goes By", artist: "Dooley Wilson", movie: "Casablanca" },
-    { title: "The Sound of Music", artist: "Julie Andrews", movie: "The Sound of Music" },
-    { title: "Moon River", artist: "Henry Mancini", movie: "Breakfast at Tiffany's" },
-    { title: "Mrs. Robinson", artist: "Simon & Garfunkel", movie: "The Graduate" },
-    { title: "Raindrops Keep Fallin' on My Head", artist: "B.J. Thomas", movie: "Butch Cassidy and the Sundance Kid" },
-    { title: "Theme from Shaft", artist: "Isaac Hayes", movie: "Shaft" },
-    { title: "Stayin' Alive", artist: "Bee Gees", movie: "Saturday Night Fever" },
-    { title: "You're The One That I Want", artist: "John Travolta", movie: "Grease" },
-    { title: "Gonna Fly Now", artist: "Bill Conti", movie: "Rocky" },
-    { title: "Take My Breath Away", artist: "Berlin", movie: "Top Gun" },
-    { title: "The Power of Love", artist: "Huey Lewis and the News", movie: "Back to the Future" },
-    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters" },
-    { title: "Footloose", artist: "Kenny Loggins", movie: "Footloose" },
-    { title: "Flashdance... What a Feeling", artist: "Irene Cara", movie: "Flashdance" },
-    { title: "Time of My Life", artist: "Bill Medley", movie: "Dirty Dancing" },
-    { title: "Unchained Melody", artist: "Righteous Brothers", movie: "Ghost" },
-    { title: "Against All Odds", artist: "Phil Collins", movie: "Against All Odds" },
-    { title: "Endless Love", artist: "Diana Ross", movie: "Endless Love" },
-    { title: "Up Where We Belong", artist: "Joe Cocker", movie: "An Officer and a Gentleman" },
-    { title: "Fame", artist: "Irene Cara", movie: "Fame" },
-    { title: "9 to 5", artist: "Dolly Parton", movie: "9 to 5" },
-    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III" },
-    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun" },
-    { title: "Don't You (Forget About Me)", artist: "Simple Minds", movie: "The Breakfast Club" },
-    { title: "St. Elmo's Fire", artist: "John Parr", movie: "St. Elmo's Fire" },
-    { title: "Axel F", artist: "Harold Faltermeyer", movie: "Beverly Hills Cop" },
-    { title: "Chariots of Fire", artist: "Vangelis", movie: "Chariots of Fire" },
-    { title: "Raiders March", artist: "John Williams", movie: "Indiana Jones" },
-    { title: "Flying Theme", artist: "John Williams", movie: "E.T." },
-    { title: "Main Title", artist: "John Williams", movie: "Jaws" },
-    { title: "The Pink Panther Theme", artist: "Henry Mancini", movie: "The Pink Panther" },
-    { title: "Goldfinger", artist: "Shirley Bassey", movie: "Goldfinger" },
-    { title: "Live and Let Die", artist: "Paul McCartney", movie: "Live and Let Die" },
-    { title: "Nobody Does It Better", artist: "Carly Simon", movie: "The Spy Who Loved Me" },
-    { title: "For Your Eyes Only", artist: "Sheena Easton", movie: "For Your Eyes Only" },
-    { title: "A View to a Kill", artist: "Duran Duran", movie: "A View to a Kill" },
-    { title: "Windmills of Your Mind", artist: "Noel Harrison", movie: "The Thomas Crown Affair" },
-    { title: "Everybody's Talkin'", artist: "Harry Nilsson", movie: "Midnight Cowboy" },
-    { title: "Born to be Wild", artist: "Steppenwolf", movie: "Easy Rider" },
-    { title: "Stand By Me", artist: "Ben E. King", movie: "Stand By Me" },
-    { title: "Twist and Shout", artist: "The Beatles", movie: "Ferris Bueller's Day Off" },
-    { title: "Old Time Rock and Roll", artist: "Bob Seger", movie: "Risky Business" },
-    { title: "I'm Alright", artist: "Kenny Loggins", movie: "Caddyshack" },
-    { title: "Soul Man", artist: "Blues Brothers", movie: "The Blues Brothers" },
-    { title: "Bohemian Rhapsody", artist: "Queen", movie: "Wayne's World" },
-    { title: "My Girl", artist: "The Temptations", movie: "My Girl" }
+    { title: "The Godfather Waltz", artist: "Nino Rota", movie: "The Godfather", year: 1972 },
+    { title: "Tara's Theme", artist: "Max Steiner", movie: "Gone with the Wind", year: 1939 },
+    { title: "Over the Rainbow", artist: "Judy Garland", movie: "The Wizard of Oz", year: 1939 },
+    { title: "Singin' in the Rain", artist: "Gene Kelly", movie: "Singin' in the Rain", year: 1952 },
+    { title: "As Time Goes By", artist: "Dooley Wilson", movie: "Casablanca", year: 1942 },
+    { title: "The Sound of Music", artist: "Julie Andrews", movie: "The Sound of Music", year: 1965 },
+    { title: "Moon River", artist: "Henry Mancini", movie: "Breakfast at Tiffany's", year: 1961 },
+    { title: "Mrs. Robinson", artist: "Simon & Garfunkel", movie: "The Graduate", year: 1967 },
+    { title: "Raindrops Keep Fallin' on My Head", artist: "B.J. Thomas", movie: "Butch Cassidy and the Sundance Kid", year: 1969 },
+    { title: "Theme from Shaft", artist: "Isaac Hayes", movie: "Shaft", year: 1971 },
+    { title: "Stayin' Alive", artist: "Bee Gees", movie: "Saturday Night Fever", year: 1977 },
+    { title: "You're The One That I Want", artist: "John Travolta", movie: "Grease", year: 1978 },
+    { title: "Gonna Fly Now", artist: "Bill Conti", movie: "Rocky", year: 1976 },
+    { title: "Take My Breath Away", artist: "Berlin", movie: "Top Gun", year: 1986 },
+    { title: "The Power of Love", artist: "Huey Lewis and the News", movie: "Back to the Future", year: 1985 },
+    { title: "Ghostbusters", artist: "Ray Parker Jr.", movie: "Ghostbusters", year: 1984 },
+    { title: "Footloose", artist: "Kenny Loggins", movie: "Footloose", year: 1984 },
+    { title: "Flashdance... What a Feeling", artist: "Irene Cara", movie: "Flashdance", year: 1983 },
+    { title: "Time of My Life", artist: "Bill Medley", movie: "Dirty Dancing", year: 1987 },
+    { title: "Unchained Melody", artist: "Righteous Brothers", movie: "Ghost", year: 1990 },
+    { title: "Against All Odds", artist: "Phil Collins", movie: "Against All Odds", year: 1984 },
+    { title: "Endless Love", artist: "Diana Ross", movie: "Endless Love", year: 1981 },
+    { title: "Up Where We Belong", artist: "Joe Cocker", movie: "An Officer and a Gentleman", year: 1982 },
+    { title: "Fame", artist: "Irene Cara", movie: "Fame", year: 1980 },
+    { title: "9 to 5", artist: "Dolly Parton", movie: "9 to 5", year: 1980 },
+    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III", year: 1982 },
+    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun", year: 1986 },
+    { title: "Don't You (Forget About Me)", artist: "Simple Minds", movie: "The Breakfast Club", year: 1985 },
+    { title: "St. Elmo's Fire", artist: "John Parr", movie: "St. Elmo's Fire", year: 1985 },
+    { title: "Axel F", artist: "Harold Faltermeyer", movie: "Beverly Hills Cop", year: 1984 },
+    { title: "Chariots of Fire", artist: "Vangelis", movie: "Chariots of Fire", year: 1981 },
+    { title: "Raiders March", artist: "John Williams", movie: "Raiders of the Lost Ark", year: 1981 },
+    { title: "Flying Theme", artist: "John Williams", movie: "E.T. the Extra-Terrestrial", year: 1982 },
+    { title: "Main Title", artist: "John Williams", movie: "Jaws", year: 1975 },
+    { title: "The Pink Panther Theme", artist: "Henry Mancini", movie: "The Pink Panther", year: 1963 },
+    { title: "Goldfinger", artist: "Shirley Bassey", movie: "Goldfinger", year: 1964 },
+    { title: "Live and Let Die", artist: "Paul McCartney", movie: "Live and Let Die", year: 1973 },
+    { title: "Nobody Does It Better", artist: "Carly Simon", movie: "The Spy Who Loved Me", year: 1977 },
+    { title: "For Your Eyes Only", artist: "Sheena Easton", movie: "For Your Eyes Only", year: 1981 },
+    { title: "A View to a Kill", artist: "Duran Duran", movie: "A View to a Kill", year: 1985 },
+    { title: "Windmills of Your Mind", artist: "Noel Harrison", movie: "The Thomas Crown Affair", year: 1968 },
+    { title: "Everybody's Talkin'", artist: "Harry Nilsson", movie: "Midnight Cowboy", year: 1969 },
+    { title: "Born to be Wild", artist: "Steppenwolf", movie: "Easy Rider", year: 1969 },
+    { title: "Stand By Me", artist: "Ben E. King", movie: "Stand By Me", year: 1986 },
+    { title: "Twist and Shout", artist: "The Beatles", movie: "Ferris Bueller's Day Off", year: 1986 },
+    { title: "Old Time Rock and Roll", artist: "Bob Seger", movie: "Risky Business", year: 1983 },
+    { title: "I'm Alright", artist: "Kenny Loggins", movie: "Caddyshack", year: 1980 },
+    { title: "Soul Man", artist: "Blues Brothers", movie: "The Blues Brothers", year: 1980 },
+    { title: "Bohemian Rhapsody", artist: "Queen", movie: "Wayne's World", year: 1992 },
+    { title: "My Girl", artist: "The Temptations", movie: "My Girl", year: 1991 }
   ],
   modern_tv: [ // Last 20 Years
-    { title: "Game of Thrones Main Title", artist: "Ramin Djawadi", movie: "Game of Thrones" },
-    { title: "Stranger Things Theme", artist: "Kyle Dixon", movie: "Stranger Things" },
-    { title: "Succession (Main Title)", artist: "Nicholas Britell", movie: "Succession" },
-    { title: "The White Lotus Theme", artist: "Cristobal Tapia de Veer", movie: "The White Lotus" },
-    { title: "The Mandalorian", artist: "Ludwig Goransson", movie: "The Mandalorian" },
-    { title: "Breaking Bad Theme", artist: "Dave Porter", movie: "Breaking Bad" },
-    { title: "Better Call Saul Theme", artist: "Little Barrie", movie: "Better Call Saul" },
-    { title: "The Office (Main Theme)", artist: "The Scrantones", movie: "The Office" },
-    { title: "Parks and Recreation", artist: "Gaby Moreno", movie: "Parks and Recreation" },
-    { title: "Big Bang Theory Theme", artist: "Barenaked Ladies", movie: "The Big Bang Theory" },
-    { title: "Modern Family Theme", artist: "Gabriel Mann", movie: "Modern Family" },
-    { title: "Brooklyn Nine-Nine", artist: "Dan Marocco", movie: "Brooklyn Nine-Nine" },
-    { title: "How I Met Your Mother", artist: "The Solids", movie: "How I Met Your Mother" },
-    { title: "Mad Men (A Beautiful Mine)", artist: "RJD2", movie: "Mad Men" },
-    { title: "Downton Abbey Theme", artist: "John Lunn", movie: "Downton Abbey" },
-    { title: "Sherlock Theme", artist: "David Arnold", movie: "Sherlock" },
-    { title: "Doctor Who Theme", artist: "Murray Gold", movie: "Doctor Who" },
-    { title: "Westworld Main Title", artist: "Ramin Djawadi", movie: "Westworld" },
-    { title: "Toss A Coin To Your Witcher", artist: "Sonya Belousova", movie: "The Witcher" },
-    { title: "Enemy", artist: "Imagine Dragons", movie: "Arcane" },
-    { title: "Yellowstone Theme", artist: "Brian Tyler", movie: "Yellowstone" },
-    { title: "Ted Lasso Theme", artist: "Marcus Mumford", movie: "Ted Lasso" },
-    { title: "Severance Main Title", artist: "Theodore Shapiro", movie: "Severance" },
-    { title: "Squid Game (Way Back Then)", artist: "Jung Jaeil", movie: "Squid Game" },
-    { title: "Wednesday Main Titles", artist: "Danny Elfman", movie: "Wednesday" },
-    { title: "You've Got Time", artist: "Regina Spektor", movie: "Orange Is the New Black" },
-    { title: "Cosy in the Rocket", artist: "Psapp", movie: "Grey's Anatomy" },
-    { title: "How to Save a Life", artist: "The Fray", movie: "Grey's Anatomy" },
-    { title: "Chasing Cars", artist: "Snow Patrol", movie: "Grey's Anatomy" },
-    { title: "Teardrop", artist: "Massive Attack", movie: "House" },
-    { title: "Woke Up This Morning", artist: "Alabama 3", movie: "The Sopranos" },
-    { title: "The Walking Dead Theme", artist: "Bear McCreary", movie: "The Walking Dead" },
-    { title: "Dexter Main Title", artist: "Rolfe Kent", movie: "Dexter" },
-    { title: "True Blood (Bad Things)", artist: "Jace Everett", movie: "True Blood" },
-    { title: "Shameless", artist: "The High Strung", movie: "Shameless" },
-    { title: "Superman", artist: "Lazlo Bane", movie: "Scrubs" },
-    { title: "I Don't Want to Be", artist: "Gavin DeGraw", movie: "One Tree Hill" },
-    { title: "California", artist: "Phantom Planet", movie: "The O.C." },
-    { title: "Save Me", artist: "Remy Zero", movie: "Smallville" },
-    { title: "Where You Lead", artist: "Carole King", movie: "Gilmore Girls" },
-    { title: "Boss of Me", artist: "They Might Be Giants", movie: "Malcolm in the Middle" },
-    { title: "Unwritten", artist: "Natasha Bedingfield", movie: "The Hills" },
-    { title: "Leave It All to Me", artist: "Miranda Cosgrove", movie: "iCarly" },
-    { title: "Make It Shine", artist: "Victoria Justice", movie: "Victorious" },
-    { title: "The Best of Both Worlds", artist: "Miley Cyrus", movie: "Hannah Montana" },
-    { title: "Everything Is Not What It Seems", artist: "Selena Gomez", movie: "Wizards of Waverly Place" },
-    { title: "Phineas and Ferb Theme", artist: "Bowling For Soup", movie: "Phineas and Ferb" },
-    { title: "SpongeBob SquarePants Theme", artist: "Patrick Pinney", movie: "SpongeBob SquarePants" },
-    { title: "Adventure Time", artist: "Pendleton Ward", movie: "Adventure Time" },
-    { title: "Rick and Morty Theme", artist: "Ryan Elder", movie: "Rick and Morty" }
+    { title: "Game of Thrones Main Title", artist: "Ramin Djawadi", movie: "Game of Thrones", year: 2011 },
+    { title: "Stranger Things Theme", artist: "Kyle Dixon", movie: "Stranger Things", year: 2016 },
+    { title: "Succession (Main Title)", artist: "Nicholas Britell", movie: "Succession", year: 2018 },
+    { title: "The White Lotus Theme", artist: "Cristobal Tapia de Veer", movie: "The White Lotus", year: 2021 },
+    { title: "The Mandalorian", artist: "Ludwig Goransson", movie: "The Mandalorian", year: 2019 },
+    { title: "Breaking Bad Theme", artist: "Dave Porter", movie: "Breaking Bad", year: 2008 },
+    { title: "Better Call Saul Theme", artist: "Little Barrie", movie: "Better Call Saul", year: 2015 },
+    { title: "The Office (Main Theme)", artist: "The Scrantones", movie: "The Office", year: 2005 },
+    { title: "Parks and Recreation", artist: "Gaby Moreno", movie: "Parks and Recreation", year: 2009 },
+    { title: "Big Bang Theory Theme", artist: "Barenaked Ladies", movie: "The Big Bang Theory", year: 2007 },
+    { title: "Modern Family Theme", artist: "Gabriel Mann", movie: "Modern Family", year: 2009 },
+    { title: "Brooklyn Nine-Nine", artist: "Dan Marocco", movie: "Brooklyn Nine-Nine", year: 2013 },
+    { title: "How I Met Your Mother", artist: "The Solids", movie: "How I Met Your Mother", year: 2005 },
+    { title: "Mad Men (A Beautiful Mine)", artist: "RJD2", movie: "Mad Men", year: 2007 },
+    { title: "Downton Abbey Theme", artist: "John Lunn", movie: "Downton Abbey", year: 2010 },
+    { title: "Sherlock Theme", artist: "David Arnold", movie: "Sherlock", year: 2010 },
+    { title: "Doctor Who Theme", artist: "Murray Gold", movie: "Doctor Who", year: 2005 },
+    { title: "Westworld Main Title", artist: "Ramin Djawadi", movie: "Westworld", year: 2016 },
+    { title: "Toss A Coin To Your Witcher", artist: "Sonya Belousova", movie: "The Witcher", year: 2019 },
+    { title: "Enemy", artist: "Imagine Dragons", movie: "Arcane", year: 2021 },
+    { title: "Yellowstone Theme", artist: "Brian Tyler", movie: "Yellowstone", year: 2018 },
+    { title: "Ted Lasso Theme", artist: "Marcus Mumford", movie: "Ted Lasso", year: 2020 },
+    { title: "Severance Main Title", artist: "Theodore Shapiro", movie: "Severance", year: 2022 },
+    { title: "Squid Game (Way Back Then)", artist: "Jung Jaeil", movie: "Squid Game", year: 2021 },
+    { title: "Wednesday Main Titles", artist: "Danny Elfman", movie: "Wednesday", year: 2022 },
+    { title: "You've Got Time", artist: "Regina Spektor", movie: "Orange Is the New Black", year: 2013 },
+    { title: "Cosy in the Rocket", artist: "Psapp", movie: "Grey's Anatomy", year: 2005 },
+    { title: "How to Save a Life", artist: "The Fray", movie: "Grey's Anatomy", year: 2005 },
+    { title: "Chasing Cars", artist: "Snow Patrol", movie: "Grey's Anatomy", year: 2005 },
+    { title: "Teardrop", artist: "Massive Attack", movie: "House", year: 2004 },
+    { title: "Woke Up This Morning", artist: "Alabama 3", movie: "The Sopranos", year: 1999 },
+    { title: "The Walking Dead Theme", artist: "Bear McCreary", movie: "The Walking Dead", year: 2010 },
+    { title: "Dexter Main Title", artist: "Rolfe Kent", movie: "Dexter", year: 2006 },
+    { title: "True Blood (Bad Things)", artist: "Jace Everett", movie: "True Blood", year: 2008 },
+    { title: "Shameless", artist: "The High Strung", movie: "Shameless", year: 2011 },
+    { title: "Superman", artist: "Lazlo Bane", movie: "Scrubs", year: 2001 },
+    { title: "I Don't Want to Be", artist: "Gavin DeGraw", movie: "One Tree Hill", year: 2003 },
+    { title: "California", artist: "Phantom Planet", movie: "The O.C.", year: 2003 },
+    { title: "Save Me", artist: "Remy Zero", movie: "Smallville", year: 2001 },
+    { title: "Where You Lead", artist: "Carole King", movie: "Gilmore Girls", year: 2000 },
+    { title: "Boss of Me", artist: "They Might Be Giants", movie: "Malcolm in the Middle", year: 2000 },
+    { title: "Unwritten", artist: "Natasha Bedingfield", movie: "The Hills", year: 2006 },
+    { title: "Leave It All to Me", artist: "Miranda Cosgrove", movie: "iCarly", year: 2007 },
+    { title: "Make It Shine", artist: "Victoria Justice", movie: "Victorious", year: 2010 },
+    { title: "The Best of Both Worlds", artist: "Miley Cyrus", movie: "Hannah Montana", year: 2006 },
+    { title: "Everything Is Not What It Seems", artist: "Selena Gomez", movie: "Wizards of Waverly Place", year: 2007 },
+    { title: "Phineas and Ferb Theme", artist: "Bowling For Soup", movie: "Phineas and Ferb", year: 2007 },
+    { title: "SpongeBob SquarePants Theme", artist: "Patrick Pinney", movie: "SpongeBob SquarePants", year: 1999 },
+    { title: "Adventure Time", artist: "Pendleton Ward", movie: "Adventure Time", year: 2010 },
+    { title: "Rick and Morty Theme", artist: "Ryan Elder", movie: "Rick and Morty", year: 2013 }
   ],
   classic_tv: [ // 20-50 Years Ago (70s, 80s, 90s)
-    { title: "I'll Be There for You", artist: "The Rembrandts", movie: "Friends" },
-    { title: "Seinfeld Theme", artist: "Jonathan Wolff", movie: "Seinfeld" },
-    { title: "Where Everybody Knows Your Name", artist: "Gary Portnoy", movie: "Cheers" },
-    { title: "Thank You for Being a Friend", artist: "Cynthia Fee", movie: "The Golden Girls" },
-    { title: "Everywhere You Look", artist: "Jesse Frederick", movie: "Full House" },
-    { title: "Fresh Prince of Bel-Air", artist: "Will Smith", movie: "The Fresh Prince of Bel-Air" },
-    { title: "Saved by the Bell", artist: "Michael Damian", movie: "Saved by the Bell" },
-    { title: "The Simpsons Theme", artist: "Danny Elfman", movie: "The Simpsons" },
-    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files" },
-    { title: "Twin Peaks Theme", artist: "Angelo Badalamenti", movie: "Twin Peaks" },
-    { title: "Law & Order", artist: "Mike Post", movie: "Law & Order" },
-    { title: "Suicide Is Painless", artist: "Johnny Mandel", movie: "M*A*S*H" },
-    { title: "Angela", artist: "Bob James", movie: "Taxi" },
-    { title: "Movin' On Up", artist: "Ja'net Dubois", movie: "The Jeffersons" },
-    { title: "Good Times", artist: "Jim Gilstrap", movie: "Good Times" },
-    { title: "Sanford and Son Theme", artist: "Quincy Jones", movie: "Sanford and Son" },
-    { title: "Those Were the Days", artist: "Carroll O'Connor", movie: "All in the Family" },
-    { title: "Love is All Around", artist: "Sonny Curtis", movie: "The Mary Tyler Moore Show" },
-    { title: "Happy Days", artist: "Pratt & McClain", movie: "Happy Days" },
-    { title: "Making Our Dreams Come True", artist: "Cyndi Grecco", movie: "Laverne & Shirley" },
-    { title: "Come and Knock on Our Door", artist: "Ray Charles", movie: "Three's Company" },
-    { title: "It Takes Diff'rent Strokes", artist: "Alan Thicke", movie: "Diff'rent Strokes" },
-    { title: "Facts of Life", artist: "Gloria Loring", movie: "The Facts of Life" },
-    { title: "As Long As We Got Each Other", artist: "B.J. Thomas", movie: "Growing Pains" },
-    { title: "Without Us", artist: "Johnny Mathis", movie: "Family Ties" },
-    { title: "Believe It or Not", artist: "Joey Scarbury", movie: "The Greatest American Hero" },
-    { title: "Theme from Magnum P.I.", artist: "Mike Post", movie: "Magnum, P.I." },
-    { title: "Miami Vice Theme", artist: "Jan Hammer", movie: "Miami Vice" },
-    { title: "Knight Rider Theme", artist: "Stu Phillips", movie: "Knight Rider" },
-    { title: "The A-Team Theme", artist: "Mike Post", movie: "The A-Team" },
-    { title: "MacGyver Theme", artist: "Randy Edelman", movie: "MacGyver" },
-    { title: "Hawaii Five-O", artist: "The Ventures", movie: "Hawaii Five-O" },
-    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible (TV)" },
-    { title: "Batman Theme", artist: "Neal Hefti", movie: "Batman (1966)" },
-    { title: "The Brady Bunch", artist: "Peppermint Trolley Company", movie: "The Brady Bunch" },
-    { title: "The Addams Family", artist: "Vic Mizzy", movie: "The Addams Family" },
-    { title: "The Munsters", artist: "Jack Marshall", movie: "The Munsters" },
-    { title: "I Dream of Jeannie", artist: "Hugo Montenegro", movie: "I Dream of Jeannie" },
-    { title: "Bewitched", artist: "Howard Greenfield", movie: "Bewitched" },
-    { title: "Gilligan's Island", artist: "The Wellingtons", movie: "Gilligan's Island" },
-    { title: "Scooby-Doo, Where Are You!", artist: "Larry Marks", movie: "Scooby-Doo" },
-    { title: "The Flintstones", artist: "Hoyt Curtin", movie: "The Flintstones" },
-    { title: "The Jetsons", artist: "Hoyt Curtin", movie: "The Jetsons" },
-    { title: "DuckTales Theme", artist: "Jeff Pescetto", movie: "DuckTales" },
-    { title: "Teenage Mutant Ninja Turtles", artist: "Chuck Lorre", movie: "Teenage Mutant Ninja Turtles" },
-    { title: "Pokemon Theme", artist: "Jason Paige", movie: "Pokemon" },
-    { title: "Mighty Morphin Power Rangers", artist: "Ron Wasserman", movie: "Power Rangers" },
-    { title: "Baywatch Theme", artist: "Jimi Jamison", movie: "Baywatch" },
-    { title: "Bad Boys", artist: "Inner Circle", movie: "Cops" },
-    { title: "In the Street", artist: "Cheap Trick", movie: "That '70s Show" }
+    { title: "I'll Be There for You", artist: "The Rembrandts", movie: "Friends", year: 1994 },
+    { title: "Seinfeld Theme", artist: "Jonathan Wolff", movie: "Seinfeld", year: 1989 },
+    { title: "Where Everybody Knows Your Name", artist: "Gary Portnoy", movie: "Cheers", year: 1982 },
+    { title: "Thank You for Being a Friend", artist: "Cynthia Fee", movie: "The Golden Girls", year: 1985 },
+    { title: "Everywhere You Look", artist: "Jesse Frederick", movie: "Full House", year: 1987 },
+    { title: "Fresh Prince of Bel-Air", artist: "Will Smith", movie: "The Fresh Prince of Bel-Air", year: 1990 },
+    { title: "Saved by the Bell", artist: "Michael Damian", movie: "Saved by the Bell", year: 1989 },
+    { title: "The Simpsons Theme", artist: "Danny Elfman", movie: "The Simpsons", year: 1989 },
+    { title: "The X-Files", artist: "Mark Snow", movie: "The X-Files", year: 1993 },
+    { title: "Twin Peaks Theme", artist: "Angelo Badalamenti", movie: "Twin Peaks", year: 1990 },
+    { title: "Law & Order", artist: "Mike Post", movie: "Law & Order", year: 1990 },
+    { title: "Suicide Is Painless", artist: "Johnny Mandel", movie: "M*A*S*H", year: 1972 },
+    { title: "Angela", artist: "Bob James", movie: "Taxi", year: 1978 },
+    { title: "Movin' On Up", artist: "Ja'net Dubois", movie: "The Jeffersons", year: 1975 },
+    { title: "Good Times", artist: "Jim Gilstrap", movie: "Good Times", year: 1974 },
+    { title: "Sanford and Son Theme", artist: "Quincy Jones", movie: "Sanford and Son", year: 1972 },
+    { title: "Those Were the Days", artist: "Carroll O'Connor", movie: "All in the Family", year: 1971 },
+    { title: "Love is All Around", artist: "Sonny Curtis", movie: "The Mary Tyler Moore Show", year: 1970 },
+    { title: "Happy Days", artist: "Pratt & McClain", movie: "Happy Days", year: 1974 },
+    { title: "Making Our Dreams Come True", artist: "Cyndi Grecco", movie: "Laverne & Shirley", year: 1976 },
+    { title: "Come and Knock on Our Door", artist: "Ray Charles", movie: "Three's Company", year: 1977 },
+    { title: "It Takes Diff'rent Strokes", artist: "Alan Thicke", movie: "Diff'rent Strokes", year: 1978 },
+    { title: "Facts of Life", artist: "Gloria Loring", movie: "The Facts of Life", year: 1979 },
+    { title: "As Long As We Got Each Other", artist: "B.J. Thomas", movie: "Growing Pains", year: 1985 },
+    { title: "Without Us", artist: "Johnny Mathis", movie: "Family Ties", year: 1982 },
+    { title: "Believe It or Not", artist: "Joey Scarbury", movie: "The Greatest American Hero", year: 1981 },
+    { title: "Theme from Magnum P.I.", artist: "Mike Post", movie: "Magnum, P.I.", year: 1980 },
+    { title: "Miami Vice Theme", artist: "Jan Hammer", movie: "Miami Vice", year: 1984 },
+    { title: "Knight Rider Theme", artist: "Stu Phillips", movie: "Knight Rider", year: 1982 },
+    { title: "The A-Team Theme", artist: "Mike Post", movie: "The A-Team", year: 1983 },
+    { title: "MacGyver Theme", artist: "Randy Edelman", movie: "MacGyver", year: 1985 },
+    { title: "Hawaii Five-O", artist: "The Ventures", movie: "Hawaii Five-O", year: 1968 },
+    { title: "Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible", year: 1966 },
+    { title: "Batman Theme", artist: "Neal Hefti", movie: "Batman", year: 1966 },
+    { title: "The Brady Bunch", artist: "Peppermint Trolley Company", movie: "The Brady Bunch", year: 1969 },
+    { title: "The Addams Family", artist: "Vic Mizzy", movie: "The Addams Family", year: 1964 },
+    { title: "The Munsters", artist: "Jack Marshall", movie: "The Munsters", year: 1964 },
+    { title: "I Dream of Jeannie", artist: "Hugo Montenegro", movie: "I Dream of Jeannie", year: 1965 },
+    { title: "Bewitched", artist: "Howard Greenfield", movie: "Bewitched", year: 1964 },
+    { title: "Gilligan's Island", artist: "The Wellingtons", movie: "Gilligan's Island", year: 1964 },
+    { title: "Scooby-Doo, Where Are You!", artist: "Larry Marks", movie: "Scooby-Doo, Where Are You!", year: 1969 },
+    { title: "The Flintstones", artist: "Hoyt Curtin", movie: "The Flintstones", year: 1960 },
+    { title: "The Jetsons", artist: "Hoyt Curtin", movie: "The Jetsons", year: 1962 },
+    { title: "DuckTales Theme", artist: "Jeff Pescetto", movie: "DuckTales", year: 1987 },
+    { title: "Teenage Mutant Ninja Turtles", artist: "Chuck Lorre", movie: "Teenage Mutant Ninja Turtles", year: 1987 },
+    { title: "Pokemon Theme", artist: "Jason Paige", movie: "Pokemon", year: 1997 },
+    { title: "Mighty Morphin Power Rangers", artist: "Ron Wasserman", movie: "Mighty Morphin Power Rangers", year: 1993 },
+    { title: "Baywatch Theme", artist: "Jimi Jamison", movie: "Baywatch", year: 1989 },
+    { title: "Bad Boys", artist: "Inner Circle", movie: "Cops", year: 1989 },
+    { title: "In the Street", artist: "Cheap Trick", movie: "That '70s Show", year: 1998 }
   ],
   scifi: [
-    { title: "Main Title", artist: "John Williams", movie: "Star Wars: A New Hope" },
-    { title: "The Imperial March", artist: "John Williams", movie: "Star Wars: The Empire Strikes Back" },
-    { title: "Duel of the Fates", artist: "John Williams", movie: "Star Wars: The Phantom Menace" },
-    { title: "Blade Runner Blues", artist: "Vangelis", movie: "Blade Runner" },
-    { title: "Cornfield Chase", artist: "Hans Zimmer", movie: "Interstellar" },
-    { title: "Also Sprach Zarathustra", artist: "Richard Strauss", movie: "2001: A Space Odyssey" },
-    { title: "The Matrix Is Real", artist: "Don Davis", movie: "The Matrix" },
-    { title: "Terminator Theme", artist: "Brad Fiedel", movie: "The Terminator" },
-    { title: "Flying Theme", artist: "John Williams", movie: "E.T. the Extra-Terrestrial" },
-    { title: "Theme from Jurassic Park", artist: "John Williams", movie: "Jurassic Park" },
-    { title: "Back to the Future", artist: "Alan Silvestri", movie: "Back to the Future" },
-    { title: "End Titles", artist: "Vangelis", movie: "Blade Runner" },
-    { title: "Avatar Suite", artist: "James Horner", movie: "Avatar" },
-    { title: "Time", artist: "Hans Zimmer", movie: "Inception" },
-    { title: "No Time for Caution", artist: "Hans Zimmer", movie: "Interstellar" },
-    { title: "Dream Is Collapsing", artist: "Hans Zimmer", movie: "Inception" },
-    { title: "Star Trek Main Title", artist: "Jerry Goldsmith", movie: "Star Trek: The Motion Picture" },
-    { title: "Into Darkness", artist: "Michael Giacchino", movie: "Star Trek Into Darkness" },
-    { title: "The Shape of Water", artist: "Alexandre Desplat", movie: "The Shape of Water" },
-    { title: "Arrival", artist: "Johann Johannsson", movie: "Arrival" },
-    { title: "Gravity", artist: "Steven Price", movie: "Gravity" },
-    { title: "Solaris", artist: "Cliff Martinez", movie: "Solaris" },
-    { title: "Tron Legacy (End Titles)", artist: "Daft Punk", movie: "Tron: Legacy" },
-    { title: "Derezzed", artist: "Daft Punk", movie: "Tron: Legacy" },
-    { title: "Pacific Rim", artist: "Ramin Djawadi", movie: "Pacific Rim" },
-    { title: "Mad Max: Fury Road", artist: "Junkie XL", movie: "Mad Max: Fury Road" },
-    { title: "Dune", artist: "Hans Zimmer", movie: "Dune" },
-    { title: "Paul's Dream", artist: "Hans Zimmer", movie: "Dune" },
-    { title: "The Batman", artist: "Michael Giacchino", movie: "The Batman" },
-    { title: "Wakanda", artist: "Ludwig Göransson", movie: "Black Panther" },
-    { title: "Portals", artist: "Alan Silvestri", movie: "Avengers: Endgame" },
-    { title: "The Avengers", artist: "Alan Silvestri", movie: "The Avengers" },
-    { title: "Iron Man", artist: "Ramin Djawadi", movie: "Iron Man" },
-    { title: "Spider-Man Main Title", artist: "Danny Elfman", movie: "Spider-Man" },
-    { title: "Wonder Woman's Wrath", artist: "Rupert Gregson-Williams", movie: "Wonder Woman" },
-    { title: "Man of Steel", artist: "Hans Zimmer", movie: "Man of Steel" },
-    { title: "Guardians of the Galaxy", artist: "Tyler Bates", movie: "Guardians of the Galaxy" },
-    { title: "Hooked on a Feeling", artist: "Blue Swede", movie: "Guardians of the Galaxy" },
-    { title: "Come and Get Your Love", artist: "Redbone", movie: "Guardians of the Galaxy" },
-    { title: "Mr. Blue Sky", artist: "Electric Light Orchestra", movie: "Guardians of the Galaxy Vol. 2" },
-    { title: "Immigrant Song", artist: "Led Zeppelin", movie: "Thor: Ragnarok" },
-    { title: "Black Widow", artist: "Lorne Balfe", movie: "Black Widow" },
-    { title: "Doctor Strange", artist: "Michael Giacchino", movie: "Doctor Strange" },
-    { title: "Ant-Man Theme", artist: "Christophe Beck", movie: "Ant-Man" },
-    { title: "Captain America", artist: "Alan Silvestri", movie: "Captain America: The First Avenger" },
-    { title: "Winter Soldier", artist: "Henry Jackman", movie: "Captain America: The Winter Soldier" },
-    { title: "X-Men Theme", artist: "Michael Kamen", movie: "X-Men" },
-    { title: "Logan", artist: "Marco Beltrami", movie: "Logan" },
-    { title: "Deadpool Rap", artist: "Teamheadkick", movie: "Deadpool" },
-    { title: "Venom", artist: "Eminem", movie: "Venom" }
+    { title: "Main Title", artist: "John Williams", movie: "Star Wars", year: 1977 },
+    { title: "The Imperial March", artist: "John Williams", movie: "The Empire Strikes Back", year: 1980 },
+    { title: "Duel of the Fates", artist: "John Williams", movie: "Star Wars: Episode I - The Phantom Menace", year: 1999 },
+    { title: "Blade Runner Blues", artist: "Vangelis", movie: "Blade Runner", year: 1982 },
+    { title: "Cornfield Chase", artist: "Hans Zimmer", movie: "Interstellar", year: 2014 },
+    { title: "Also Sprach Zarathustra", artist: "Richard Strauss", movie: "2001: A Space Odyssey", year: 1968 },
+    { title: "The Matrix Is Real", artist: "Don Davis", movie: "The Matrix", year: 1999 },
+    { title: "Terminator Theme", artist: "Brad Fiedel", movie: "The Terminator", year: 1984 },
+    { title: "Flying Theme", artist: "John Williams", movie: "E.T. the Extra-Terrestrial", year: 1982 },
+    { title: "Theme from Jurassic Park", artist: "John Williams", movie: "Jurassic Park", year: 1993 },
+    { title: "Back to the Future", artist: "Alan Silvestri", movie: "Back to the Future", year: 1985 },
+    { title: "End Titles", artist: "Vangelis", movie: "Blade Runner", year: 1982 },
+    { title: "Avatar Suite", artist: "James Horner", movie: "Avatar", year: 2009 },
+    { title: "Time", artist: "Hans Zimmer", movie: "Inception", year: 2010 },
+    { title: "No Time for Caution", artist: "Hans Zimmer", movie: "Interstellar", year: 2014 },
+    { title: "Dream Is Collapsing", artist: "Hans Zimmer", movie: "Inception", year: 2010 },
+    { title: "Star Trek Main Title", artist: "Jerry Goldsmith", movie: "Star Trek: The Motion Picture", year: 1979 },
+    { title: "Into Darkness", artist: "Michael Giacchino", movie: "Star Trek Into Darkness", year: 2013 },
+    { title: "The Shape of Water", artist: "Alexandre Desplat", movie: "The Shape of Water", year: 2017 },
+    { title: "Arrival", artist: "Johann Johannsson", movie: "Arrival", year: 2016 },
+    { title: "Gravity", artist: "Steven Price", movie: "Gravity", year: 2013 },
+    { title: "Solaris", artist: "Cliff Martinez", movie: "Solaris", year: 2002 },
+    { title: "Tron Legacy (End Titles)", artist: "Daft Punk", movie: "Tron: Legacy", year: 2010 },
+    { title: "Derezzed", artist: "Daft Punk", movie: "Tron: Legacy", year: 2010 },
+    { title: "Pacific Rim", artist: "Ramin Djawadi", movie: "Pacific Rim", year: 2013 },
+    { title: "Mad Max: Fury Road", artist: "Junkie XL", movie: "Mad Max: Fury Road", year: 2015 },
+    { title: "Dune", artist: "Hans Zimmer", movie: "Dune", year: 2021 },
+    { title: "Paul's Dream", artist: "Hans Zimmer", movie: "Dune", year: 2021 },
+    { title: "The Batman", artist: "Michael Giacchino", movie: "The Batman", year: 2022 },
+    { title: "Wakanda", artist: "Ludwig Göransson", movie: "Black Panther", year: 2018 },
+    { title: "Portals", artist: "Alan Silvestri", movie: "Avengers: Endgame", year: 2019 },
+    { title: "The Avengers", artist: "Alan Silvestri", movie: "The Avengers", year: 2012 },
+    { title: "Iron Man", artist: "Ramin Djawadi", movie: "Iron Man", year: 2008 },
+    { title: "Spider-Man Main Title", artist: "Danny Elfman", movie: "Spider-Man", year: 2002 },
+    { title: "Wonder Woman's Wrath", artist: "Rupert Gregson-Williams", movie: "Wonder Woman", year: 2017 },
+    { title: "Man of Steel", artist: "Hans Zimmer", movie: "Man of Steel", year: 2013 },
+    { title: "Guardians of the Galaxy", artist: "Tyler Bates", movie: "Guardians of the Galaxy", year: 2014 },
+    { title: "Hooked on a Feeling", artist: "Blue Swede", movie: "Guardians of the Galaxy", year: 2014 },
+    { title: "Come and Get Your Love", artist: "Redbone", movie: "Guardians of the Galaxy", year: 2014 },
+    { title: "Mr. Blue Sky", artist: "Electric Light Orchestra", movie: "Guardians of the Galaxy Vol. 2", year: 2017 },
+    { title: "Immigrant Song", artist: "Led Zeppelin", movie: "Thor: Ragnarok", year: 2017 },
+    { title: "Black Widow", artist: "Lorne Balfe", movie: "Black Widow", year: 2021 },
+    { title: "Doctor Strange", artist: "Michael Giacchino", movie: "Doctor Strange", year: 2016 },
+    { title: "Ant-Man Theme", artist: "Christophe Beck", movie: "Ant-Man", year: 2015 },
+    { title: "Captain America", artist: "Alan Silvestri", movie: "Captain America: The First Avenger", year: 2011 },
+    { title: "Winter Soldier", artist: "Henry Jackman", movie: "Captain America: The Winter Soldier", year: 2014 },
+    { title: "X-Men Theme", artist: "Michael Kamen", movie: "X-Men", year: 2000 },
+    { title: "Logan", artist: "Marco Beltrami", movie: "Logan", year: 2017 },
+    { title: "Deadpool Rap", artist: "Teamheadkick", movie: "Deadpool", year: 2016 },
+    { title: "Venom", artist: "Eminem", movie: "Venom", year: 2018 }
   ],
   action: [
-    { title: "He's a Pirate", artist: "Klaus Badelt", movie: "Pirates of the Caribbean: The Curse of the Black Pearl" },
-    { title: "Theme from Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible" },
-    { title: "Raiders March", artist: "John Williams", movie: "Indiana Jones and the Raiders of the Lost Ark" },
-    { title: "James Bond Theme", artist: "Monty Norman", movie: "Dr. No" },
-    { title: "Gladiator Theme", artist: "Hans Zimmer", movie: "Gladiator" },
-    { title: "Now We Are Free", artist: "Hans Zimmer", movie: "Gladiator" },
-    { title: "Mombasa", artist: "Hans Zimmer", movie: "Inception" },
-    { title: "The Dark Knight", artist: "Hans Zimmer", movie: "The Dark Knight" },
-    { title: "Molossus", artist: "Hans Zimmer", movie: "Batman Begins" },
-    { title: "Why So Serious?", artist: "Hans Zimmer", movie: "The Dark Knight" },
-    { title: "Braveheart Theme", artist: "James Horner", movie: "Braveheart" },
-    { title: "Last of the Mohicans", artist: "Trevor Jones", movie: "The Last of the Mohicans" },
-    { title: "Top Gun Anthem", artist: "Harold Faltermeyer", movie: "Top Gun" },
-    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun" },
-    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III" },
-    { title: "Gonna Fly Now", artist: "Bill Conti", movie: "Rocky" },
-    { title: "Training Montage", artist: "Vince DiCola", movie: "Rocky IV" },
-    { title: "Conan the Barbarian", artist: "Basil Poledouris", movie: "Conan the Barbarian" },
-    { title: "Robocop Theme", artist: "Basil Poledouris", movie: "RoboCop" },
-    { title: "Predator Theme", artist: "Alan Silvestri", movie: "Predator" },
-    { title: "Die Hard", artist: "Michael Kamen", movie: "Die Hard" },
-    { title: "Lethal Weapon", artist: "Michael Kamen", movie: "Lethal Weapon" },
-    { title: "Speed Title", artist: "Mark Mancina", movie: "Speed" },
-    { title: "The Rock", artist: "Hans Zimmer", movie: "The Rock" },
-    { title: "Face/Off", artist: "John Powell", movie: "Face/Off" },
-    { title: "Con Air", artist: "Mark Mancina", movie: "Con Air" },
-    { title: "Armageddon", artist: "Trevor Rabin", movie: "Armageddon" },
-    { title: "Independence Day", artist: "David Arnold", movie: "Independence Day" },
-    { title: "Air Force One", artist: "Jerry Goldsmith", movie: "Air Force One" },
-    { title: "The Mummy", artist: "Jerry Goldsmith", movie: "The Mummy" },
-    { title: "National Treasure", artist: "Trevor Rabin", movie: "National Treasure" },
-    { title: "Bourne Identity", artist: "John Powell", movie: "The Bourne Identity" },
-    { title: "Extreme Ways", artist: "Moby", movie: "The Bourne Identity" },
-    { title: "Casino Royale", artist: "David Arnold", movie: "Casino Royale" },
-    { title: "You Know My Name", artist: "Chris Cornell", movie: "Casino Royale" },
-    { title: "Skyfall", artist: "Adele", movie: "Skyfall" },
-    { title: "No Time To Die", artist: "Billie Eilish", movie: "No Time to Die" },
-    { title: "Writing's on the Wall", artist: "Sam Smith", movie: "Spectre" },
-    { title: "John Wick Mode", artist: "Le Castle Vania", movie: "John Wick" },
-    { title: "Kill Bill", artist: "Tomoyasu Hotei", movie: "Kill Bill: Vol. 1" },
-    { title: "Bang Bang", artist: "Nancy Sinatra", movie: "Kill Bill: Vol. 1" },
-    { title: "Misirlou", artist: "Dick Dale", movie: "Pulp Fiction" },
-    { title: "Mad Max Fury Road", artist: "Junkie XL", movie: "Mad Max: Fury Road" },
-    { title: "Brothers in Arms", artist: "Junkie XL", movie: "Mad Max: Fury Road" },
-    { title: "Wonder Woman", artist: "Hans Zimmer", movie: "Batman v Superman" },
-    { title: "300", artist: "Tyler Bates", movie: "300" },
-    { title: "Troy", artist: "James Horner", movie: "Troy" },
-    { title: "Kingdom of Heaven", artist: "Harry Gregson-Williams", movie: "Kingdom of Heaven" },
-    { title: "King Arthur", artist: "Hans Zimmer", movie: "King Arthur" },
-    { title: "Rush Hour", artist: "Lalo Schifrin", movie: "Rush Hour" }
+    { title: "He's a Pirate", artist: "Klaus Badelt", movie: "Pirates of the Caribbean: The Curse of the Black Pearl", year: 2003 },
+    { title: "Theme from Mission: Impossible", artist: "Lalo Schifrin", movie: "Mission: Impossible", year: 1996 },
+    { title: "Raiders March", artist: "John Williams", movie: "Raiders of the Lost Ark", year: 1981 },
+    { title: "James Bond Theme", artist: "Monty Norman", movie: "Dr. No", year: 1962 },
+    { title: "Gladiator Theme", artist: "Hans Zimmer", movie: "Gladiator", year: 2000 },
+    { title: "Now We Are Free", artist: "Hans Zimmer", movie: "Gladiator", year: 2000 },
+    { title: "Mombasa", artist: "Hans Zimmer", movie: "Inception", year: 2010 },
+    { title: "The Dark Knight", artist: "Hans Zimmer", movie: "The Dark Knight", year: 2008 },
+    { title: "Molossus", artist: "Hans Zimmer", movie: "Batman Begins", year: 2005 },
+    { title: "Why So Serious?", artist: "Hans Zimmer", movie: "The Dark Knight", year: 2008 },
+    { title: "Braveheart Theme", artist: "James Horner", movie: "Braveheart", year: 1995 },
+    { title: "Last of the Mohicans", artist: "Trevor Jones", movie: "The Last of the Mohicans", year: 1992 },
+    { title: "Top Gun Anthem", artist: "Harold Faltermeyer", movie: "Top Gun", year: 1986 },
+    { title: "Danger Zone", artist: "Kenny Loggins", movie: "Top Gun", year: 1986 },
+    { title: "Eye of the Tiger", artist: "Survivor", movie: "Rocky III", year: 1982 },
+    { title: "Gonna Fly Now", artist: "Bill Conti", movie: "Rocky", year: 1976 },
+    { title: "Training Montage", artist: "Vince DiCola", movie: "Rocky IV", year: 1985 },
+    { title: "Conan the Barbarian", artist: "Basil Poledouris", movie: "Conan the Barbarian", year: 1982 },
+    { title: "Robocop Theme", artist: "Basil Poledouris", movie: "RoboCop", year: 1987 },
+    { title: "Predator Theme", artist: "Alan Silvestri", movie: "Predator", year: 1987 },
+    { title: "Die Hard", artist: "Michael Kamen", movie: "Die Hard", year: 1988 },
+    { title: "Lethal Weapon", artist: "Michael Kamen", movie: "Lethal Weapon", year: 1987 },
+    { title: "Speed Title", artist: "Mark Mancina", movie: "Speed", year: 1994 },
+    { title: "The Rock", artist: "Hans Zimmer", movie: "The Rock", year: 1996 },
+    { title: "Face/Off", artist: "John Powell", movie: "Face/Off", year: 1997 },
+    { title: "Con Air", artist: "Mark Mancina", movie: "Con Air", year: 1997 },
+    { title: "Armageddon", artist: "Trevor Rabin", movie: "Armageddon", year: 1998 },
+    { title: "Independence Day", artist: "David Arnold", movie: "Independence Day", year: 1996 },
+    { title: "Air Force One", artist: "Jerry Goldsmith", movie: "Air Force One", year: 1997 },
+    { title: "The Mummy", artist: "Jerry Goldsmith", movie: "The Mummy", year: 1999 },
+    { title: "National Treasure", artist: "Trevor Rabin", movie: "National Treasure", year: 2004 },
+    { title: "Bourne Identity", artist: "John Powell", movie: "The Bourne Identity", year: 2002 },
+    { title: "Extreme Ways", artist: "Moby", movie: "The Bourne Identity", year: 2002 },
+    { title: "Casino Royale", artist: "David Arnold", movie: "Casino Royale", year: 2006 },
+    { title: "You Know My Name", artist: "Chris Cornell", movie: "Casino Royale", year: 2006 },
+    { title: "Skyfall", artist: "Adele", movie: "Skyfall", year: 2012 },
+    { title: "No Time To Die", artist: "Billie Eilish", movie: "No Time to Die", year: 2021 },
+    { title: "Writing's on the Wall", artist: "Sam Smith", movie: "Spectre", year: 2015 },
+    { title: "John Wick Mode", artist: "Le Castle Vania", movie: "John Wick", year: 2014 },
+    { title: "Kill Bill", artist: "Tomoyasu Hotei", movie: "Kill Bill: Vol. 1", year: 2003 },
+    { title: "Bang Bang", artist: "Nancy Sinatra", movie: "Kill Bill: Vol. 1", year: 2003 },
+    { title: "Misirlou", artist: "Dick Dale", movie: "Pulp Fiction", year: 1994 },
+    { title: "Mad Max Fury Road", artist: "Junkie XL", movie: "Mad Max: Fury Road", year: 2015 },
+    { title: "Brothers in Arms", artist: "Junkie XL", movie: "Mad Max: Fury Road", year: 2015 },
+    { title: "Wonder Woman", artist: "Hans Zimmer", movie: "Batman v Superman: Dawn of Justice", year: 2016 },
+    { title: "300", artist: "Tyler Bates", movie: "300", year: 2006 },
+    { title: "Troy", artist: "James Horner", movie: "Troy", year: 2004 },
+    { title: "Kingdom of Heaven", artist: "Harry Gregson-Williams", movie: "Kingdom of Heaven", year: 2005 },
+    { title: "King Arthur", artist: "Hans Zimmer", movie: "King Arthur", year: 2004 },
+    { title: "Rush Hour", artist: "Lalo Schifrin", movie: "Rush Hour", year: 1998 }
   ],
   animation: [
-    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King" },
-    { title: "Under the Sea", artist: "Samuel E. Wright", movie: "The Little Mermaid" },
-    { title: "Part of Your World", artist: "Jodi Benson", movie: "The Little Mermaid" },
-    { title: "Beauty and the Beast", artist: "Angela Lansbury", movie: "Beauty and the Beast" },
-    { title: "Be Our Guest", artist: "Jerry Orbach", movie: "Beauty and the Beast" },
-    { title: "A Whole New World", artist: "Brad Kane", movie: "Aladdin" },
-    { title: "Friend Like Me", artist: "Robin Williams", movie: "Aladdin" },
-    { title: "Colors of the Wind", artist: "Judy Kuhn", movie: "Pocahontas" },
-    { title: "You've Got a Friend in Me", artist: "Randy Newman", movie: "Toy Story" },
-    { title: "When She Loved Me", artist: "Sarah McLachlan", movie: "Toy Story 2" },
-    { title: "Hakuna Matata", artist: "Nathan Lane", movie: "The Lion King" },
-    { title: "Can You Feel the Love Tonight", artist: "Elton John", movie: "The Lion King" },
-    { title: "Reflection", artist: "Lea Salonga", movie: "Mulan" },
-    { title: "I'll Make a Man Out of You", artist: "Donny Osmond", movie: "Mulan" },
-    { title: "Go the Distance", artist: "Roger Bart", movie: "Hercules" },
-    { title: "You'll Be in My Heart", artist: "Phil Collins", movie: "Tarzan" },
-    { title: "Let It Go", artist: "Idina Menzel", movie: "Frozen" },
-    { title: "Do You Want to Build a Snowman?", artist: "Kristen Bell", movie: "Frozen" },
-    { title: "Into the Unknown", artist: "Idina Menzel", movie: "Frozen II" },
-    { title: "How Far I'll Go", artist: "Auli'i Cravalho", movie: "Moana" },
-    { title: "You're Welcome", artist: "Dwayne Johnson", movie: "Moana" },
-    { title: "Remember Me", artist: "Benjamin Bratt", movie: "Coco" },
-    { title: "Un Poco Loco", artist: "Anthony Gonzalez", movie: "Coco" },
-    { title: "We Don't Talk About Bruno", artist: "Carolina Gaitan", movie: "Encanto" },
-    { title: "Surface Pressure", artist: "Jessica Darrow", movie: "Encanto" },
-    { title: "The Bare Necessities", artist: "Phil Harris", movie: "The Jungle Book" },
-    { title: "I Wan'na Be Like You", artist: "Louis Prima", movie: "The Jungle Book" },
-    { title: "Cruella De Vil", artist: "Bill Lee", movie: "101 Dalmatians" },
-    { title: "Bella Notte", artist: "George Givot", movie: "Lady and the Tramp" },
-    { title: "Once Upon a Dream", artist: "Mary Costa", movie: "Sleeping Beauty" },
-    { title: "Bibbidi-Bobbidi-Boo", artist: "Verna Felton", movie: "Cinderella" },
-    { title: "When You Wish Upon a Star", artist: "Cliff Edwards", movie: "Pinocchio" },
-    { title: "Whistle While You Work", artist: "Adriana Caselotti", movie: "Snow White and the Seven Dwarfs" },
-    { title: "Heigh-Ho", artist: "The Dwarfs", movie: "Snow White and the Seven Dwarfs" },
-    { title: "Married Life", artist: "Michael Giacchino", movie: "Up" },
-    { title: "Touch the Sky", artist: "Julie Fowlis", movie: "Brave" },
-    { title: "Le Festin", artist: "Camille", movie: "Ratatouille" },
-    { title: "Nemo Egg", artist: "Thomas Newman", movie: "Finding Nemo" },
-    { title: "The Incredibles", artist: "Michael Giacchino", movie: "The Incredibles" },
-    { title: "Monsters, Inc.", artist: "Randy Newman", movie: "Monsters, Inc." },
-    { title: "If I Didn't Have You", artist: "Billy Crystal", movie: "Monsters, Inc." },
-    { title: "Life is a Highway", artist: "Rascal Flatts", movie: "Cars" },
-    { title: "Real Gone", artist: "Sheryl Crow", movie: "Cars" },
-    { title: "Accidentally in Love", artist: "Counting Crows", movie: "Shrek 2" },
-    { title: "I'm a Believer", artist: "Smash Mouth", movie: "Shrek" },
-    { title: "All Star", artist: "Smash Mouth", movie: "Shrek" },
-    { title: "Everything Is Awesome", artist: "Tegan and Sara", movie: "The Lego Movie" },
-    { title: "Spider-Man", artist: "Paul Francis Webster", movie: "Spider-Man: Into the Spider-Verse" },
-    { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse" },
-    { title: "What's Up Danger", artist: "Blackway", movie: "Spider-Man: Into the Spider-Verse" }
+    { title: "Circle of Life", artist: "Elton John", movie: "The Lion King", year: 1994 },
+    { title: "Under the Sea", artist: "Samuel E. Wright", movie: "The Little Mermaid", year: 1989 },
+    { title: "Part of Your World", artist: "Jodi Benson", movie: "The Little Mermaid", year: 1989 },
+    { title: "Beauty and the Beast", artist: "Angela Lansbury", movie: "Beauty and the Beast", year: 1991 },
+    { title: "Be Our Guest", artist: "Jerry Orbach", movie: "Beauty and the Beast", year: 1991 },
+    { title: "A Whole New World", artist: "Brad Kane", movie: "Aladdin", year: 1992 },
+    { title: "Friend Like Me", artist: "Robin Williams", movie: "Aladdin", year: 1992 },
+    { title: "Colors of the Wind", artist: "Judy Kuhn", movie: "Pocahontas", year: 1995 },
+    { title: "You've Got a Friend in Me", artist: "Randy Newman", movie: "Toy Story", year: 1995 },
+    { title: "When She Loved Me", artist: "Sarah McLachlan", movie: "Toy Story 2", year: 1999 },
+    { title: "Hakuna Matata", artist: "Nathan Lane", movie: "The Lion King", year: 1994 },
+    { title: "Can You Feel the Love Tonight", artist: "Elton John", movie: "The Lion King", year: 1994 },
+    { title: "Reflection", artist: "Lea Salonga", movie: "Mulan", year: 1998 },
+    { title: "I'll Make a Man Out of You", artist: "Donny Osmond", movie: "Mulan", year: 1998 },
+    { title: "Go the Distance", artist: "Roger Bart", movie: "Hercules", year: 1997 },
+    { title: "You'll Be in My Heart", artist: "Phil Collins", movie: "Tarzan", year: 1999 },
+    { title: "Let It Go", artist: "Idina Menzel", movie: "Frozen", year: 2013 },
+    { title: "Do You Want to Build a Snowman?", artist: "Kristen Bell", movie: "Frozen", year: 2013 },
+    { title: "Into the Unknown", artist: "Idina Menzel", movie: "Frozen II", year: 2019 },
+    { title: "How Far I'll Go", artist: "Auli'i Cravalho", movie: "Moana", year: 2016 },
+    { title: "You're Welcome", artist: "Dwayne Johnson", movie: "Moana", year: 2016 },
+    { title: "Remember Me", artist: "Benjamin Bratt", movie: "Coco", year: 2017 },
+    { title: "Un Poco Loco", artist: "Anthony Gonzalez", movie: "Coco", year: 2017 },
+    { title: "We Don't Talk About Bruno", artist: "Carolina Gaitan", movie: "Encanto", year: 2021 },
+    { title: "Surface Pressure", artist: "Jessica Darrow", movie: "Encanto", year: 2021 },
+    { title: "The Bare Necessities", artist: "Phil Harris", movie: "The Jungle Book", year: 1967 },
+    { title: "I Wan'na Be Like You", artist: "Louis Prima", movie: "The Jungle Book", year: 1967 },
+    { title: "Cruella De Vil", artist: "Bill Lee", movie: "One Hundred and One Dalmatians", year: 1961 },
+    { title: "Bella Notte", artist: "George Givot", movie: "Lady and the Tramp", year: 1955 },
+    { title: "Once Upon a Dream", artist: "Mary Costa", movie: "Sleeping Beauty", year: 1959 },
+    { title: "Bibbidi-Bobbidi-Boo", artist: "Verna Felton", movie: "Cinderella", year: 1950 },
+    { title: "When You Wish Upon a Star", artist: "Cliff Edwards", movie: "Pinocchio", year: 1940 },
+    { title: "Whistle While You Work", artist: "Adriana Caselotti", movie: "Snow White and the Seven Dwarfs", year: 1937 },
+    { title: "Heigh-Ho", artist: "The Dwarfs", movie: "Snow White and the Seven Dwarfs", year: 1937 },
+    { title: "Married Life", artist: "Michael Giacchino", movie: "Up", year: 2009 },
+    { title: "Touch the Sky", artist: "Julie Fowlis", movie: "Brave", year: 2012 },
+    { title: "Le Festin", artist: "Camille", movie: "Ratatouille", year: 2007 },
+    { title: "Nemo Egg", artist: "Thomas Newman", movie: "Finding Nemo", year: 2003 },
+    { title: "The Incredibles", artist: "Michael Giacchino", movie: "The Incredibles", year: 2004 },
+    { title: "Monsters, Inc.", artist: "Randy Newman", movie: "Monsters, Inc.", year: 2001 },
+    { title: "If I Didn't Have You", artist: "Billy Crystal", movie: "Monsters, Inc.", year: 2001 },
+    { title: "Life is a Highway", artist: "Rascal Flatts", movie: "Cars", year: 2006 },
+    { title: "Real Gone", artist: "Sheryl Crow", movie: "Cars", year: 2006 },
+    { title: "Accidentally in Love", artist: "Counting Crows", movie: "Shrek 2", year: 2004 },
+    { title: "I'm a Believer", artist: "Smash Mouth", movie: "Shrek", year: 2001 },
+    { title: "All Star", artist: "Smash Mouth", movie: "Shrek", year: 2001 },
+    { title: "Everything Is Awesome", artist: "Tegan and Sara", movie: "The Lego Movie", year: 2014 },
+    { title: "Spider-Man", artist: "Paul Francis Webster", movie: "Spider-Man: Into the Spider-Verse", year: 2018 },
+    { title: "Sunflower", artist: "Post Malone", movie: "Spider-Man: Into the Spider-Verse", year: 2018 },
+    { title: "What's Up Danger", artist: "Blackway", movie: "Spider-Man: Into the Spider-Verse", year: 2018 }
   ]
 };
 
@@ -510,8 +510,8 @@ const searchItunes = async (query) => {
 };
 
 // Search iTunes for Movie Poster (to get film art instead of album art)
-const searchMoviePoster = async (query) => {
-  console.log(`[TMDB] Searching for: "${query}"`); // Log query
+const searchMoviePoster = async (query, type = 'movie', year = null) => {
+  console.log(`[TMDB] Searching for ${type}: "${query}" (${year})`);
 
   if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) {
       console.warn("[TMDB] No access token provided or placeholder used.");
@@ -519,7 +519,17 @@ const searchMoviePoster = async (query) => {
   }
   
   try {
-    const url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`;
+    const endpoint = type === 'tv' ? 'tv' : 'movie';
+    let url = `https://api.themoviedb.org/3/search/${endpoint}?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`;
+    
+    if (year) {
+        if (type === 'movie') {
+            url += `&year=${year}`;
+        } else {
+            url += `&first_air_date_year=${year}`;
+        }
+    }
+
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -536,13 +546,16 @@ const searchMoviePoster = async (query) => {
     const data = await res.json();
     
     if (data.results && data.results.length > 0) {
-        const firstResult = data.results[0];
-        if (firstResult.poster_path) {
-             const posterUrl = `https://image.tmdb.org/t/p/w780${firstResult.poster_path}`;
+        // Sort by popularity to get the most likely match if there are multiple
+        const sortedResults = data.results.sort((a, b) => b.popularity - a.popularity);
+        const bestResult = sortedResults[0];
+
+        if (bestResult.poster_path) {
+             const posterUrl = `https://image.tmdb.org/t/p/w780${bestResult.poster_path}`;
              console.log(`[TMDB] Found poster for "${query}": ${posterUrl}`);
              return posterUrl;
         } else {
-            console.log(`[TMDB] Movie found for "${query}" but no poster_path available.`);
+            console.log(`[TMDB] Movie/Show found for "${query}" but no poster_path available.`);
         }
     } else {
         console.log(`[TMDB] No results found for "${query}".`);
@@ -882,11 +895,15 @@ const HostView = ({ gameId, user }) => {
     const allSongs = CATEGORIES[category];
     const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
     
+    // Determine media type for poster search
+    const isTvCategory = category === 'modern_tv' || category === 'classic_tv';
+    const mediaType = isTvCategory ? 'tv' : 'movie';
+    
     // Fetch audio url for first song
     // Fetch Music and Poster in parallel
     const [musicData, posterUrl] = await Promise.all([
         searchItunes(`${trackData.title} ${trackData.artist} soundtrack`),
-        searchMoviePoster(trackData.movie)
+        searchMoviePoster(trackData.movie, mediaType, trackData.year)
     ]);
 
     const previewUrl = musicData?.previewUrl || null;
@@ -952,6 +969,10 @@ const HostView = ({ gameId, user }) => {
     let attempts = 0;
     const MAX_ATTEMPTS = 5;
 
+    // Determine media type for poster search
+    const isTvCategory = category === 'modern_tv' || category === 'classic_tv';
+    const mediaType = isTvCategory ? 'tv' : 'movie';
+
     // Retry loop to find a song with valid data (audio + image)
     while (!selectedSong && availableSongs.length > 0 && attempts < MAX_ATTEMPTS) {
         attempts++;
@@ -961,7 +982,7 @@ const HostView = ({ gameId, user }) => {
         // Fetch Music and Poster in parallel
         const [musicData, posterUrl] = await Promise.all([
             searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
-            searchMoviePoster(candidate.movie)
+            searchMoviePoster(candidate.movie, mediaType, candidate.year)
         ]);
 
         // Check if we got a playable preview and at least some artwork
@@ -1157,62 +1178,21 @@ const HostView = ({ gameId, user }) => {
 
                    {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
-                       showHistory ? (
-                           <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-fade-in w-full h-[600px] flex flex-col">
-                               <h2 className="text-3xl font-bold mb-4 flex items-center gap-2 justify-center"><Clock /> Game History</h2>
-                               <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                                   {game.playedSongs && game.playedSongs.length > 0 ? (
-                                       game.playedSongs.map((song, i) => (
-                                           <div key={i} className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg">
-                                               {typeof song === 'object' ? (
-                                                   <>
-                                                       <img src={song.coverArt || "https://placehold.co/100"} className="w-12 h-12 rounded object-cover bg-slate-700" />
-                                                       <div className="text-left">
-                                                           <div className="font-bold text-white">{song.movie}</div>
-                                                           <div className="text-sm text-slate-400">{song.title}</div>
-                                                       </div>
-                                                   </>
-                                               ) : (
-                                                   <span className="text-slate-400">{song}</span> // Fallback for old data
-                                               )}
-                                           </div>
-                                       ))
-                                   ) : (
-                                       <div className="text-slate-500 italic">No history available</div>
-                                   )}
-                               </div>
-                               <button 
-                                 onClick={() => setShowHistory(false)}
-                                 className="mt-6 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
-                               >
-                                 <ArrowLeft size={20} /> Back to Results
-                               </button>
+                       <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
+                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
+                           <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
+                           <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
+                           <div className="text-xl md:text-2xl mb-6 md:mb-8">
+                               Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
+                               <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
                            </div>
-                       ) : (
-                           <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
-                               {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
-                               <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
-                               <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
-                               <div className="text-xl md:text-2xl mb-6 md:mb-8">
-                                   Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
-                                   <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
-                               </div>
-                               <div className="flex flex-col gap-3 max-w-xs mx-auto">
-                                   <button 
-                                     onClick={handleNewGame}
-                                     className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2"
-                                   >
-                                     <RefreshCw size={20}/> Setup New Game
-                                   </button>
-                                   <button 
-                                     onClick={() => setShowHistory(true)}
-                                     className="px-6 py-3 md:px-8 md:py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl flex items-center justify-center gap-2"
-                                   >
-                                     <Clock size={20}/> View Song History
-                                   </button>
-                               </div>
-                           </div>
-                       )
+                           <button 
+                             onClick={handleNewGame}
+                             className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"
+                           >
+                             <RefreshCw size={20}/> Setup New Game
+                           </button>
+                       </div>
                    )}
 
                    {/* PLAYING STATE */}
@@ -1229,10 +1209,10 @@ const HostView = ({ gameId, user }) => {
                    )}
 
                    {game?.buzzerWinner && game?.status !== 'revealed' && (
-                     <div className="flex flex-col items-center text-yellow-400 animate-bounce-short">
+                     <div className="flex flex-col items-center text-yellow-400 animate-bounce-short pt-8">
                         {buzzerPlayer?.avatar ? (
                             <div className="mb-6 bg-slate-800 p-2 rounded-full shadow-2xl">
-                              <img src={buzzerPlayer.avatar} className="w-64 h-64 md:w-96 md:h-96 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
+                              <img src={buzzerPlayer.avatar} className="w-56 h-56 md:w-80 md:h-80 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
                             </div>
                         ) : (
                             <AlertCircle size={80} className="mb-6 md:w-32 md:h-32" />
@@ -1248,7 +1228,7 @@ const HostView = ({ gameId, user }) => {
                         <div className="mb-6 flex flex-col items-center">
                            <img 
                              src={game.currentSong.coverArt} 
-                             className="max-h-[65vh] w-auto max-w-full object-contain rounded-lg shadow-2xl mb-6" 
+                             className="max-h-[40vh] w-auto max-w-full object-contain rounded-lg shadow-2xl mb-6" 
                              alt="Movie Poster"
                            />
                            <h2 className="text-3xl md:text-5xl font-black text-white text-center leading-tight mb-2">{game.currentSong.movie}</h2>
