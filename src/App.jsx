@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { CATEGORIES } from './data';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -22,6 +21,10 @@ import {
 } from 'firebase/firestore';
 import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool } from 'lucide-react';
 
+// --- LOCAL DATA IMPORT PLACEHOLDER ---
+// In your local setup, delete the CATEGORIES object below and uncomment the following line:
+import { CATEGORIES } from './data';
+
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
   // 1. Preview Environment (Internal Use)
@@ -30,7 +33,7 @@ const getEnvironmentConfig = () => {
       firebaseConfig: JSON.parse(__firebase_config),
       appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
       geminiKey: "",
-      tmdbAccessToken: "" // Preview env doesn't support TMDB
+      tmdbAccessToken: "" 
     };
   }
 
@@ -53,7 +56,7 @@ const getEnvironmentConfig = () => {
     }
   } catch (e) {}
 
-  // 3. Manual Fallback (For simple copy-paste deployment)
+  // 3. Manual Fallback
   return {
     firebaseConfig: {
       apiKey: "REPLACE_WITH_YOUR_API_KEY",
@@ -80,10 +83,7 @@ const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCas
 
 // Gemini Answer Verification
 const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
-  // STRICT MODE: Fail if no key is present
-  if (!apiKey || apiKey === "") {
-      return { score: 0, reason: "Error: No API Key provided. Cannot verify." };
-  }
+  if (!apiKey || apiKey === "") return { score: 0, reason: "Error: No API Key." };
   
   const prompt = `
     I am a trivia game judge.
@@ -91,8 +91,8 @@ const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
     The player guessed: "${userAnswer}".
     
     Rules:
-    1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V - The Empire Strikes Back"), award 100 points.
-    2. If the guess is the correct franchise but not the specific movie (e.g. "Star Wars" for "Phantom Menace" or "Harry Potter" for "Goblet of Fire"), award 50 points.
+    1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V"), award 100 points.
+    2. If the guess is the correct franchise but not the specific movie, award 50 points.
     3. If the guess is wrong, award 0 points.
     
     Return ONLY a raw JSON object: {"score": number, "reason": "short explanation"}
@@ -111,25 +111,17 @@ const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
       }
     );
     
-    if (!response.ok) {
-        return { score: 0, reason: `API Error ${response.status}: ${response.statusText}` };
-    }
-
+    if (!response.ok) return { score: 0, reason: `API Error ${response.status}` };
     const data = await response.json();
     const result = JSON.parse(data.candidates[0].content.parts[0].text);
-    
-    if (typeof result !== 'object' || typeof result.score !== 'number') {
-        return { score: 0, reason: "AI verification failed: Invalid response format" };
-    }
-    
     return result;
   } catch (e) {
     console.error("Gemini Verification Error", e);
-    return { score: 0, reason: `Verification Exception: ${e.message}` };
+    return { score: 0, reason: "Verification Error" };
   }
 };
 
-// Search iTunes for Preview URL
+// Search APIs
 const searchItunes = async (query) => {
   try {
     const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
@@ -141,63 +133,75 @@ const searchItunes = async (query) => {
   }
 };
 
-// Search iTunes for Movie Poster (to get film art instead of album art)
 const searchMoviePoster = async (query, type = 'movie', year = null) => {
-  console.log(`[TMDB] Searching for ${type}: "${query}" (${year})`);
-
-  if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) {
-      console.warn("[TMDB] No access token provided or placeholder used.");
-      return null;
-  }
+  if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) return null;
   
   try {
     const endpoint = type === 'tv' ? 'tv' : 'movie';
     let url = `https://api.themoviedb.org/3/search/${endpoint}?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`;
-    
-    if (year) {
-        if (type === 'movie') {
-            url += `&year=${year}`;
-        } else {
-            url += `&first_air_date_year=${year}`;
-        }
-    }
+    if (year) url += type === 'movie' ? `&year=${year}` : `&first_air_date_year=${year}`;
 
     const res = await fetch(url, {
       method: 'GET',
-      headers: {
-        accept: 'application/json',
-        Authorization: `Bearer ${tmdbAccessToken}`
-      }
+      headers: { accept: 'application/json', Authorization: `Bearer ${tmdbAccessToken}` }
     });
 
-    if (!res.ok) {
-        console.error(`[TMDB] API Error: ${res.status} ${res.statusText}`);
-        return null;
-    }
-
+    if (!res.ok) return null;
     const data = await res.json();
     
     if (data.results && data.results.length > 0) {
-        // Sort by popularity to get the most likely match if there are multiple
         const sortedResults = data.results.sort((a, b) => b.popularity - a.popularity);
         const bestResult = sortedResults[0];
-
-        if (bestResult.poster_path) {
-             const posterUrl = `https://image.tmdb.org/t/p/w780${bestResult.poster_path}`;
-             console.log(`[TMDB] Found poster for "${query}": ${posterUrl}`);
-             return posterUrl;
-        } else {
-            console.log(`[TMDB] Movie/Show found for "${query}" but no poster_path available.`);
-        }
-    } else {
-        console.log(`[TMDB] No results found for "${query}".`);
+        if (bestResult.poster_path) return `https://image.tmdb.org/t/p/w780${bestResult.poster_path}`;
     }
     return null;
   } catch (e) {
-    console.error("[TMDB] Exception during search:", e);
     return null;
   }
 };
+
+// --- HELPER: PICK RANDOM SONG ---
+// Filters out previously played songs and ensures valid API data
+const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
+    // Normalize played songs to just titles for comparison
+    const usedTitles = playedSongsHistory.map(s => (typeof s === 'string' ? s : s.title));
+    let availableSongs = categoryList.filter(s => !usedTitles.includes(s.title));
+
+    if (availableSongs.length === 0) return null; // No songs left
+
+    let selectedSong = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+
+    while (!selectedSong && availableSongs.length > 0 && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        const randomIndex = Math.floor(Math.random() * availableSongs.length);
+        const candidate = availableSongs[randomIndex];
+
+        // Determine media type for poster search (simple heuristic based on year/context if needed, but here passed from caller usually)
+        // We'll rely on the candidate object structure or defaults
+        const isTv = false; // We can improve this if we pass category type, but for now default to movie/generic
+        
+        // Fetch Music and Poster
+        const [musicData, posterUrl] = await Promise.all([
+            searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
+            searchMoviePoster(candidate.movie, 'movie', candidate.year) // Defaulting to movie search for generic helper
+        ]);
+
+        if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
+            selectedSong = {
+                ...candidate,
+                previewUrl: musicData.previewUrl,
+                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
+            };
+        } else {
+            // Remove bad candidate and try again
+            availableSongs.splice(randomIndex, 1);
+        }
+    }
+    return selectedSong;
+};
+
 
 // --- DRAWING COMPONENT ---
 const DrawingPad = ({ onSave }) => {
@@ -206,15 +210,13 @@ const DrawingPad = ({ onSave }) => {
   
   useEffect(() => {
     const canvas = canvasRef.current;
-    // Set fixed resolution but display via CSS width/height
     canvas.width = 300; 
     canvas.height = 300;
-    
     const ctx = canvas.getContext('2d');
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';
-    ctx.fillStyle = '#1e293b'; // Slate 800 background
+    ctx.fillStyle = '#1e293b'; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, []);
 
@@ -223,9 +225,7 @@ const DrawingPad = ({ onSave }) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-
     let clientX, clientY;
-    
     if (event.touches) {
       clientX = event.touches[0].clientX;
       clientY = event.touches[0].clientY;
@@ -233,15 +233,11 @@ const DrawingPad = ({ onSave }) => {
       clientX = event.clientX;
       clientY = event.clientY;
     }
-
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
-    };
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
   };
 
   const startDrawing = (e) => {
-    e.preventDefault(); // Prevent scrolling on touch
+    e.preventDefault(); 
     const { x, y } = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
     ctx.beginPath();
@@ -261,8 +257,7 @@ const DrawingPad = ({ onSave }) => {
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
-      const canvas = canvasRef.current;
-      onSave(canvas.toDataURL());
+      onSave(canvasRef.current.toDataURL());
     }
   };
 
@@ -288,12 +283,7 @@ const DrawingPad = ({ onSave }) => {
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
         />
-        <button 
-           onClick={(e) => { e.preventDefault(); clearCanvas(); }}
-           className="absolute top-2 right-2 p-2 bg-red-600/80 rounded hover:bg-red-500 text-white"
-        >
-          <X size={16} />
-        </button>
+        <button onClick={(e) => { e.preventDefault(); clearCanvas(); }} className="absolute top-2 right-2 p-2 bg-red-600/80 rounded text-white"><X size={16}/></button>
       </div>
       <p className="text-xs text-slate-400 flex items-center gap-1"><PenTool size={12}/> Draw your icon!</p>
     </div>
@@ -307,7 +297,7 @@ const Landing = ({ setMode, joinGame }) => {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(null);
-  const [step, setStep] = useState(1); // 1: Info, 2: Drawing
+  const [step, setStep] = useState(1); 
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -322,49 +312,21 @@ const Landing = ({ setMode, joinGame }) => {
             <Music size={48} className="text-white" />
           </div>
         </div>
-        <h1 className="text-5xl font-black mb-2 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-          CineScore
-        </h1>
+        <h1 className="text-5xl font-black mb-2 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">CineScore</h1>
         <p className="text-slate-400 mb-8 text-lg">The Ultimate Soundtrack Trivia</p>
 
         <div className="space-y-4 max-w-lg mx-auto w-full">
           {step === 1 ? (
              <>
-               <button 
-                 onClick={() => setMode('host')}
-                 className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
-               >
-                 Host a New Game
-               </button>
-               
+               <button onClick={() => setMode('host')} className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg">Host a New Game</button>
                <div className="relative my-6">
                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-700"></span></div>
                  <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900 text-slate-500">OR JOIN EXISTING</span></div>
                </div>
-
                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-3 w-full">
-                 <input 
-                   type="text" 
-                   placeholder="YOUR NAME"
-                   className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600"
-                   value={name}
-                   onChange={e => setName(e.target.value)}
-                 />
-                 <input 
-                   type="text" 
-                   placeholder="GAME CODE (e.g. ABCD)"
-                   className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none uppercase placeholder:text-slate-600"
-                   maxLength={4}
-                   value={code}
-                   onChange={e => setCode(e.target.value.toUpperCase())}
-                 />
-                 <button 
-                   disabled={!name || code.length !== 4}
-                   onClick={() => setStep(2)}
-                   className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-2"
-                 >
-                   Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" />
-                 </button>
+                 <input type="text" placeholder="YOUR NAME" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600" value={name} onChange={e => setName(e.target.value)}/>
+                 <input type="text" placeholder="GAME CODE (e.g. ABCD)" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none uppercase placeholder:text-slate-600" maxLength={4} value={code} onChange={e => setCode(e.target.value.toUpperCase())}/>
+                 <button disabled={!name || code.length !== 4} onClick={() => setStep(2)} className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-2">Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" /></button>
                </div>
              </>
           ) : (
@@ -372,18 +334,8 @@ const Landing = ({ setMode, joinGame }) => {
                  <h2 className="text-xl font-bold text-white">Draw Your Icon</h2>
                  <DrawingPad onSave={setAvatar} />
                  <div className="flex gap-2">
-                     <button 
-                        onClick={() => setStep(1)}
-                        className="flex-1 py-3 bg-slate-700 text-white rounded-lg font-bold hover:bg-slate-600 transition-colors"
-                     >
-                        Back
-                     </button>
-                     <button 
-                        onClick={() => joinGame(code, name, avatar)}
-                        className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-colors"
-                     >
-                        Join Game
-                     </button>
+                     <button onClick={() => setStep(1)} className="flex-1 py-3 bg-slate-700 text-white rounded-lg font-bold hover:bg-slate-600 transition-colors">Back</button>
+                     <button onClick={() => joinGame(code, name, avatar)} className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-colors">Join Game</button>
                  </div>
              </div>
           )}
@@ -404,7 +356,6 @@ const HostView = ({ gameId, user }) => {
   const audioRef = useRef(null);
   const [verification, setVerification] = useState(null);
 
-  // Load Game & Players
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (docSnap) => {
       if (docSnap.exists()) setGame(docSnap.data());
@@ -417,88 +368,53 @@ const HostView = ({ gameId, user }) => {
     return () => { unsubGame(); unsubPlayers(); };
   }, [gameId]);
 
-  // Audio Player Effect - only restarts when previewUrl changes
   useEffect(() => {
     if (audioRef.current) {
       if (game?.status === 'playing' && game?.currentSong?.previewUrl && !game?.buzzerWinner) {
-        // Only change src if it's new to avoid restart
         if (audioRef.current.src !== game.currentSong.previewUrl) {
             audioRef.current.src = game.currentSong.previewUrl;
             audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
         } else if (audioRef.current.paused) {
-            // Resume if it was paused but same song (e.g. slight hiccup)
             audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
         }
       } else if (game?.buzzerWinner || game?.status === 'revealed' || game?.status === 'game_over') {
         audioRef.current.pause();
       }
     }
-  }, [game?.currentSong?.previewUrl, game?.status, game?.buzzerWinner]); // Key fix: listen to URL string
+  }, [game?.currentSong?.previewUrl, game?.status, game?.buzzerWinner]);
 
-  // Skip Logic Watcher
   useEffect(() => {
     if (game?.status === 'playing' && game.skips && players.length > 0) {
       const activePlayerCount = players.length;
       const skipCount = game.skips.length;
-      if ((skipCount / activePlayerCount) > 0.75) {
-         giveUp(); // "Give up" effectively skips/reveals
-      }
+      if ((skipCount / activePlayerCount) > 0.75) giveUp();
     }
   }, [game?.skips, players.length, game?.status]);
 
-
-  // Gemini Verification Effect & Auto-Advance Logic
   useEffect(() => {
     if (game?.currentAnswer && !game?.answerVerified && !verification) {
       const verify = async () => {
         setVerification({ status: 'checking' });
-        
         const apiKey = initialGeminiKey; 
         const res = await verifyAnswerWithGemini(game.currentAnswer, game.currentSong.movie, apiKey); 
-        
         setVerification(res);
-        
         const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
         const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', game.buzzerWinner.uid);
         const scoreToAdd = (typeof res.score === 'number') ? res.score : 0;
 
         await runTransaction(db, async (transaction) => {
            if (scoreToAdd > 0) {
-               // Correct Answer: End Round
-               transaction.update(gameRef, { 
-                 answerVerified: true,
-                 lastRoundScore: scoreToAdd,
-                 status: 'revealed'
-               });
+               transaction.update(gameRef, { answerVerified: true, lastRoundScore: scoreToAdd, status: 'revealed' });
                transaction.update(playerRef, { score: increment(scoreToAdd) });
            } else {
-               // Incorrect Answer
-               // Check if EVERYONE has now attempted
                const currentAttempts = game.attemptedThisRound || [];
-               // We add the current buzzer winner to the list of attempts in our check logic (it's not in DB yet)
                const allAttempts = [...currentAttempts, game.buzzerWinner.uid];
-               // Filter players list to only active ones if needed, but simple length check works for now
                const allFailed = allAttempts.length >= players.length;
 
                if (allFailed) {
-                   // Everyone failed! Reveal answer.
-                   transaction.update(gameRef, {
-                       answerVerified: true,
-                       lastRoundScore: 0,
-                       status: 'revealed',
-                       feedbackMessage: "Everyone missed it! The answer is revealed."
-                   });
+                   transaction.update(gameRef, { answerVerified: true, lastRoundScore: 0, status: 'revealed', feedbackMessage: "Everyone missed it! The answer is revealed." });
                } else {
-                   // Just reset buzzer so others can try
-                   transaction.update(gameRef, {
-                       buzzerWinner: null,
-                       buzzerLocked: false,
-                       currentAnswer: null,
-                       answerVerified: false,
-                       attemptedThisRound: arrayUnion(game.buzzerWinner.uid),
-                       feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!`
-                   });
-                   // Clear feedback after 3s (optional, but good UX)
+                   transaction.update(gameRef, { buzzerWinner: null, buzzerLocked: false, currentAnswer: null, answerVerified: false, attemptedThisRound: arrayUnion(game.buzzerWinner.uid), feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!` });
                    setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
                }
            }
@@ -506,83 +422,61 @@ const HostView = ({ gameId, user }) => {
       };
       verify();
     }
-  }, [game?.currentAnswer, game?.answerVerified, players.length]); // Added players.length dependency
+  }, [game?.currentAnswer, game?.answerVerified, players.length]);
 
-  // Universal Auto-Advance Hook
   useEffect(() => {
       let timer;
       if (game?.status === 'revealed') {
-          timer = setTimeout(() => {
-              nextRound();
-          }, 6000);
+          timer = setTimeout(() => { nextRound(); }, 6000);
       }
       return () => clearTimeout(timer);
   }, [game?.status]);
 
-
   const startGame = async () => {
     setShowSettings(false);
     
-    // Pick first song explicitly here to avoid stale state issues in nextRound
+    // Determine category and media type
+    const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
     const allSongs = CATEGORIES[category];
     const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
-    
-    // Determine media type for poster search
-    const isTvCategory = category === 'modern_tv' || category === 'classic_tv';
-    const mediaType = isTvCategory ? 'tv' : 'movie';
-    
-    // Fetch audio url for first song
-    // Fetch Music and Poster in parallel
+
+    // Fetch First Song
     const [musicData, posterUrl] = await Promise.all([
         searchItunes(`${trackData.title} ${trackData.artist} soundtrack`),
         searchMoviePoster(trackData.movie, mediaType, trackData.year)
     ]);
-
     const previewUrl = musicData?.previewUrl || null;
-    // Prefer movie poster, fallback to album art. Always upscale.
     const coverArt = posterUrl || musicData?.artworkUrl100?.replace('100x100', '600x600') || null;
 
-    // Reset all player scores
     const batch = writeBatch(db);
     players.forEach(p => {
         const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', p.id);
         batch.update(pRef, { score: 0 });
     });
     
-    // Initial Game State
     const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-    await batch.commit();
-
-    // Trigger first round logic (reusing nextRound logic essentially, but we need to ensure state is set first)
-    // We will just call nextRound which handles fetching and setting the song
-    await setDoc(gameRef, {
-      hostId: user.uid,
+    batch.update(gameRef, {
       status: 'playing',
-      round: 0, // nextRound will increment this to 1
+      round: 1, 
       totalRounds: totalRounds,
-      playedSongs: [], 
+      playedSongs: [ { title: trackData.title, artist: trackData.artist, movie: trackData.movie, coverArt } ], // Init with first song
       skips: [],
       winner: null,
       buzzerWinner: null,
       currentAnswer: null,
       answerVerified: false,
-      currentSong: null,
+      currentSong: { ...trackData, previewUrl, coverArt },
       attemptedThisRound: [],
       feedbackMessage: null
-    }, { merge: true });
-
-    nextRound();
+    });
+    
+    await batch.commit();
   };
 
   const nextRound = async () => {
     setVerification(null);
-    
-    // Check if Game Over (fetch fresh state if possible, but local state 'game' is usually reliable enough here)
-    // We increment round at the end of this function, so if current round == total, we are done.
-    if (game?.round >= totalRounds) {
-        // Calculate winner
+    if (game?.round >= game?.totalRounds) {
         const winner = players.length > 0 ? players[0] : null; 
-        
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: 'game_over',
             winner: winner ? { uid: winner.id, username: winner.username, score: winner.score, avatar: winner.avatar } : null
@@ -590,50 +484,48 @@ const HostView = ({ gameId, user }) => {
         return;
     }
 
-    // Filter used songs
     const allSongs = CATEGORIES[category];
+    // Use the stored history from the game object
     const playedSongs = game?.playedSongs || [];
-    // Handle potential legacy string data just in case
+    // Helper to get raw titles from history objects
     const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
-    let availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
+    
+    // Filter out played songs
+    const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
 
+    if (availableSongs.length === 0) {
+        alert("Ran out of unique songs in this category!");
+        return;
+    }
+
+    const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
     let selectedSong = null;
     let attempts = 0;
     const MAX_ATTEMPTS = 5;
 
-    // Determine media type for poster search
-    const isTvCategory = category === 'modern_tv' || category === 'classic_tv';
-    const mediaType = isTvCategory ? 'tv' : 'movie';
-
-    // Retry loop to find a song with valid data (audio + image)
     while (!selectedSong && availableSongs.length > 0 && attempts < MAX_ATTEMPTS) {
         attempts++;
         const randomIndex = Math.floor(Math.random() * availableSongs.length);
         const candidate = availableSongs[randomIndex];
 
-        // Fetch Music and Poster in parallel
         const [musicData, posterUrl] = await Promise.all([
             searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
             searchMoviePoster(candidate.movie, mediaType, candidate.year)
         ]);
 
-        // Check if we got a playable preview and at least some artwork
         if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
             selectedSong = {
                 ...candidate,
                 previewUrl: musicData.previewUrl,
-                // Prefer movie poster, fallback to album art. Always upscale.
                 coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
             };
         } else {
-            console.warn(`Skipping incomplete song data: ${candidate.title}`);
-            // Remove bad candidate from local list so we don't pick it again immediately
             availableSongs.splice(randomIndex, 1);
         }
     }
 
     if (!selectedSong) {
-        alert("Error: Could not find a valid song with audio/image after multiple attempts. Please try another category or restart.");
+        alert("Error: Could not find a valid song. Please try another category.");
         return;
     }
 
@@ -651,7 +543,7 @@ const HostView = ({ gameId, user }) => {
           coverArt: selectedSong.coverArt
       }),
       skips: [],
-      attemptedThisRound: [], // Reset attempts
+      attemptedThisRound: [],
       feedbackMessage: null
     });
   };
@@ -660,7 +552,7 @@ const HostView = ({ gameId, user }) => {
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
        status: 'revealed',
        lastRoundScore: 0,
-       buzzerWinner: null // No winner
+       buzzerWinner: null 
      });
   };
 
@@ -675,7 +567,6 @@ const HostView = ({ gameId, user }) => {
       setShowHistory(false);
   };
   
-  // Helper to get player details
   const getPlayer = (uid) => players.find(p => p.id === uid);
 
   if (showSettings) {
@@ -685,43 +576,24 @@ const HostView = ({ gameId, user }) => {
         <div className="bg-slate-800 p-4 md:p-6 rounded-xl w-full max-w-6xl border border-slate-700">
           <div>
             <label className="block text-sm font-bold mb-2 text-slate-400">GAME CODE</label>
-            <div className="text-4xl font-mono font-black text-center bg-black/30 p-4 rounded-lg tracking-widest text-blue-400">
-              {gameId}
-            </div>
+            <div className="text-4xl font-mono font-black text-center bg-black/30 p-4 rounded-lg tracking-widest text-blue-400">{gameId}</div>
           </div>
-          
           <div className="mt-6">
              <label className="block text-sm font-bold mb-2 text-slate-400">CATEGORY</label>
              <div className="grid grid-cols-2 gap-2 mb-4">
                {Object.keys(CATEGORIES).map(c => (
-                 <button 
-                   key={c}
-                   onClick={() => setCategory(c)}
-                   className={`p-2 rounded capitalize font-bold text-xs md:text-sm ${category === c ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 hover:bg-slate-600'}`}
-                 >
-                   {c.replace('_', ' ')}
-                 </button>
+                 <button key={c} onClick={() => setCategory(c)} className={`p-2 rounded capitalize font-bold text-xs md:text-sm ${category === c ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{c.replace('_', ' ')}</button>
                ))}
              </div>
-             
              <label className="block text-sm font-bold mb-2 text-slate-400">NUMBER OF SONGS</label>
              <div className="flex gap-2">
                 {[10, 25, 50].map(num => (
-                    <button
-                        key={num}
-                        onClick={() => setTotalRounds(num)}
-                        className={`flex-1 p-2 rounded font-bold ${totalRounds === num ? 'bg-green-600 ring-2 ring-green-400' : 'bg-slate-700'}`}
-                    >
-                        {num}
-                    </button>
+                    <button key={num} onClick={() => setTotalRounds(num)} className={`flex-1 p-2 rounded font-bold ${totalRounds === num ? 'bg-green-600 ring-2 ring-green-400' : 'bg-slate-700'}`}>{num}</button>
                 ))}
              </div>
           </div>
-
           <div className="pt-4 border-t border-slate-700 mt-6">
             <h3 className="font-bold mb-4 flex items-center gap-2"><Users size={18}/> Players Joined ({players.length})</h3>
-            
-            {/* FUN PLAYER GRID */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
               {players.map(p => (
                 <div key={p.id} className="bg-slate-700/50 p-3 rounded-xl flex items-center gap-3 border border-slate-600">
@@ -743,27 +615,17 @@ const HostView = ({ gameId, user }) => {
               {players.length === 0 && <div className="col-span-full text-slate-500 italic text-center py-4">Waiting for players to join...</div>}
             </div>
           </div>
-
-          <button 
-            onClick={startGame}
-            disabled={players.length === 0}
-            className="w-full py-4 mt-6 bg-green-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform"
-          >
-            Start Game
-          </button>
+          <button onClick={startGame} disabled={players.length === 0} className="w-full py-4 mt-6 bg-green-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform">Start Game</button>
         </div>
       </div>
     );
   }
 
-  // PLAYING STATE
   const buzzerPlayer = game?.buzzerWinner ? getPlayer(game.buzzerWinner.uid) : null;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col h-screen overflow-hidden">
        <audio ref={audioRef} loop />
-       
-       {/* Top Bar */}
        <div className="bg-slate-900 p-4 shadow-lg flex justify-between items-center border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2 md:gap-4">
              <div className="bg-blue-600 px-2 py-1 md:px-3 md:py-1 rounded font-bold text-xs md:text-sm whitespace-nowrap">R {game?.round} / {game?.totalRounds}</div>
@@ -774,72 +636,39 @@ const HostView = ({ gameId, user }) => {
              <button onClick={() => setShowSettings(true)} className="text-xs text-slate-500 hover:text-white">Settings</button>
           </div>
        </div>
-
-       {/* Main Content Area - Flex Column on Mobile, Row on Desktop */}
        <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full mx-auto">
-          
-          {/* Main Stage (Game Area) */}
           <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center relative overflow-y-auto w-full">
-             
-             {/* Dynamic Background Art */}
-             {/* Only show art if revealed or game over. Otherwise show spoiler-free gradient */}
              {(game?.status === 'revealed' || game?.status === 'game_over') && game?.currentSong?.coverArt ? (
-                <div 
-                  className="absolute inset-0 bg-cover bg-center opacity-20 blur-xl transition-all duration-1000"
-                  style={{ backgroundImage: `url(${game.currentSong.coverArt})`}}
-                />
+                <div className="absolute inset-0 bg-cover bg-center opacity-20 blur-xl transition-all duration-1000" style={{ backgroundImage: `url(${game.currentSong.coverArt})`}} />
              ) : (
                 <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
                     <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600 rounded-full blur-[100px] animate-pulse"></div>
                     <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-600 rounded-full blur-[100px] animate-pulse"></div>
                 </div>
              )}
-
              <div className="z-10 w-full max-w-4xl text-center">
-                
-                {/* Status Indicator */}
                 <div className="mb-4 md:mb-8">
-                   {/* Feedback Toast */}
                    {game?.feedbackMessage && (
                        <div className="absolute top-0 left-0 right-0 p-4 flex justify-center z-50 animate-bounce-short">
-                           <div className="bg-red-600 text-white px-4 md:px-6 py-2 rounded-full font-bold shadow-lg text-sm md:text-base">
-                               {game.feedbackMessage}
-                           </div>
+                           <div className="bg-red-600 text-white px-4 md:px-6 py-2 rounded-full font-bold shadow-lg text-sm md:text-base">{game.feedbackMessage}</div>
                        </div>
                    )}
-
-                   {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
                        <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
                            {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
                            <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
                            <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
-                           <div className="text-xl md:text-2xl mb-6 md:mb-8">
-                               Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
-                               <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
-                           </div>
-                           <button 
-                             onClick={handleNewGame}
-                             className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"
-                           >
-                             <RefreshCw size={20}/> Setup New Game
-                           </button>
+                           <div className="text-xl md:text-2xl mb-6 md:mb-8">Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span><div className="text-slate-400 text-lg">Score: {game.winner?.score}</div></div>
+                           <button onClick={handleNewGame} className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"><RefreshCw size={20}/> Setup New Game</button>
                        </div>
                    )}
-
-                   {/* PLAYING STATE */}
                    {game?.status === 'playing' && !game?.buzzerWinner && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
                         <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
-                        <div className="mt-4 flex gap-2">
-                             {game.skips?.length > 0 && (
-                                 <span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>
-                             )}
-                        </div>
+                        <div className="mt-4 flex gap-2">{game.skips?.length > 0 && (<span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>)}</div>
                      </div>
                    )}
-
                    {game?.buzzerWinner && game?.status !== 'revealed' && (
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short pt-8">
                         {buzzerPlayer?.avatar ? (
@@ -854,52 +683,29 @@ const HostView = ({ gameId, user }) => {
                         {game.currentAnswer && <p className="mt-6 bg-slate-800 px-6 py-3 rounded-xl text-xl">Processing: "{game.currentAnswer}"</p>}
                      </div>
                    )}
-
                    {game?.status === 'revealed' && (
                      <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm w-full max-w-5xl">
                         <div className="mb-6 flex flex-col items-center">
-                           <img 
-                             src={game.currentSong.coverArt} 
-                             className="max-h-[40vh] w-auto max-w-full object-contain rounded-lg shadow-2xl mb-6" 
-                             alt="Movie Poster"
-                           />
+                           <img src={game.currentSong.coverArt} className="max-h-[40vh] w-auto max-w-full object-contain rounded-lg shadow-2xl mb-6" alt="Movie Poster"/>
                            <h2 className="text-3xl md:text-5xl font-black text-white text-center leading-tight mb-2">{game.currentSong.movie}</h2>
                            <p className="text-blue-400 text-xl md:text-2xl font-bold">{game.currentSong.title}</p>
                            <p className="text-slate-500 text-lg">{game.currentSong.artist}</p>
                         </div>
-                        
                         <div className={`p-4 rounded-xl font-bold text-lg md:text-xl mb-6 flex flex-col items-center gap-2 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
-                           {buzzerPlayer?.avatar && (
-                               <img src={buzzerPlayer.avatar} className="w-12 h-12 rounded-full border-2 border-current bg-slate-800 object-cover" />
-                           )}
-                           <span>
-                               {game.lastRoundScore > 0 
-                                 ? `+${game.lastRoundScore} Points to ${game.buzzerWinner?.username || 'Winner'}` 
-                                 : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : (game.feedbackMessage?.includes("Everyone") ? "Everyone Missed!" : "Time's Up!"))}
-                           </span>
+                           {buzzerPlayer?.avatar && (<img src={buzzerPlayer.avatar} className="w-12 h-12 rounded-full border-2 border-current bg-slate-800 object-cover" />)}
+                           <span>{game.lastRoundScore > 0 ? `+${game.lastRoundScore} Points to ${game.buzzerWinner?.username || 'Winner'}` : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : (game.feedbackMessage?.includes("Everyone") ? "Everyone Missed!" : "Time's Up!"))}</span>
                         </div>
-                        {/* Display error reason if score is 0 and there's an error message */}
                         {game.lastRoundScore === 0 && verification?.reason && verification.reason.includes("Error") && (
                             <p className="text-red-300 text-sm mb-4 bg-red-900/50 p-2 rounded">{verification.reason}</p>
                         )}
-
-                        <button 
-                          onClick={nextRound}
-                          className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto text-xl shadow-lg"
-                        >
-                          Next Round <SkipForward size={24}/>
-                        </button>
+                        <button onClick={nextRound} className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto text-xl shadow-lg">Next Round <SkipForward size={24}/></button>
                      </div>
                    )}
                 </div>
              </div>
           </div>
-
-          {/* Leaderboard Sidebar - Scrollable at bottom on mobile, side on desktop */}
           <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 p-4 md:p-6 flex flex-col h-48 md:h-auto shrink-0">
-             <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-6 flex items-center gap-2 sticky top-0 bg-slate-900 z-10">
-               <Trophy className="text-yellow-500" size={20} /> Leaderboard
-             </h3>
+             <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-6 flex items-center gap-2 sticky top-0 bg-slate-900 z-10"><Trophy className="text-yellow-500" size={20} /> Leaderboard</h3>
              <div className="space-y-2 md:space-y-3 overflow-y-auto flex-1 pb-2 pr-1">
                {players.map((p, idx) => (
                  <div key={p.id} className={`flex items-center justify-between p-2 md:p-3 rounded-lg transition-all ${idx === 0 ? 'bg-gradient-to-r from-yellow-600/20 to-transparent border border-yellow-600/30' : 'bg-slate-800'}`}>
@@ -931,11 +737,10 @@ const PlayerView = ({ gameId, user, username }) => {
   const [myAvatar, setMyAvatar] = useState(null);
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
-  const [showHistory, setShowHistory] = useState(false); // Player local history toggle
+  const [showHistory, setShowHistory] = useState(false); 
   const [timeLeft, setTimeLeft] = useState(10);
 
   useEffect(() => {
-    // Game Listener
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
@@ -944,12 +749,9 @@ const PlayerView = ({ gameId, user, username }) => {
            setAnswer("");
            setHasAnswered(false);
         }
-        // If game resets to lobby, reset history view
         if (data.status === 'lobby') setShowHistory(false);
       }
     });
-
-    // My Score Listener
     const unsubPlayer = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', user.uid), (snap) => {
         if (snap.exists()) {
             const data = snap.data();
@@ -957,40 +759,31 @@ const PlayerView = ({ gameId, user, username }) => {
             setMyAvatar(data.avatar);
         }
     });
-
     return () => { unsubGame(); unsubPlayer(); };
   }, [gameId, hasAnswered, user.uid]);
 
-  // Timer Effect
   useEffect(() => {
     if (game?.buzzerWinner?.uid === user.uid && game?.status === 'playing' && !hasAnswered) {
         if (timeLeft > 0) {
             const timerId = setTimeout(() => setTimeLeft(t => t - 1), 1000);
             return () => clearTimeout(timerId);
         } else {
-            // Time up!
             submitAnswer("TIMEOUT");
         }
     } else {
-        // Reset if no longer my turn
         setTimeLeft(10);
     }
   }, [timeLeft, game?.buzzerWinner, user.uid, game?.status, hasAnswered]);
 
   const buzzIn = async () => {
     if (!game || game.buzzerWinner || game.status !== 'playing') return;
-    
     await runTransaction(db, async (transaction) => {
       const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
       const sfDoc = await transaction.get(gameRef);
       if (!sfDoc.exists()) return;
-      
       const currentData = sfDoc.data();
       if (!currentData.buzzerWinner) {
-        transaction.update(gameRef, { 
-          buzzerWinner: { uid: user.uid, username: username },
-          buzzerLocked: true 
-        });
+        transaction.update(gameRef, { buzzerWinner: { uid: user.uid, username: username }, buzzerLocked: true });
       }
     });
   };
@@ -998,30 +791,21 @@ const PlayerView = ({ gameId, user, username }) => {
   const submitAnswer = async (forceContent = null) => {
     const content = forceContent !== null ? forceContent : answer;
     if (!content.trim()) return;
-
     setHasAnswered(true);
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-      currentAnswer: content
-    });
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), { currentAnswer: content });
   };
 
   const voteSkip = async () => {
-      if (game.skips?.includes(user.uid)) return; // Already voted
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-          skips: arrayUnion(user.uid)
-      });
+      if (game.skips?.includes(user.uid)) return; 
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), { skips: arrayUnion(user.uid) });
   };
-
-  // -- RENDER STATES --
 
   if (!game) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
 
   const isLockedOut = game.attemptedThisRound?.includes(user.uid);
   const isMe = game.buzzerWinner?.uid === user.uid;
   
-  // 1. GAME OVER - Victory or Defeat
   if (game.status === 'game_over') {
-       // Check if user wants to see history
        if (showHistory) {
            return (
                <div className="min-h-screen bg-slate-900 flex flex-col p-6 text-white">
@@ -1038,21 +822,12 @@ const PlayerView = ({ gameId, user, username }) => {
                                                <div className="text-xs text-slate-400 truncate">{song.title}</div>
                                            </div>
                                        </>
-                                   ) : (
-                                       <span className="text-slate-400">{song}</span>
-                                   )}
+                                   ) : (<span className="text-slate-400">{song}</span>)}
                                </div>
                            ))
-                        ) : (
-                           <div className="text-center text-slate-500 italic">No songs recorded.</div>
-                        )}
+                        ) : (<div className="text-center text-slate-500 italic">No songs recorded.</div>)}
                    </div>
-                   <button 
-                     onClick={() => setShowHistory(false)}
-                     className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
-                   >
-                     <ArrowLeft size={20} /> Back
-                   </button>
+                   <button onClick={() => setShowHistory(false)} className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"><ArrowLeft size={20} /> Back</button>
                </div>
            );
        }
@@ -1063,22 +838,10 @@ const PlayerView = ({ gameId, user, username }) => {
                <div className="min-h-screen bg-gradient-to-b from-yellow-600 to-yellow-900 flex flex-col items-center justify-center p-6 text-center text-white">
                    <Trophy size={80} className="text-yellow-200 mb-6 animate-bounce md:w-32 md:h-32" />
                    <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-xl">VICTORY!</h1>
-                   <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl text-white">
-                       Final Score: {myScore}
-                   </div>
-                   
-                   {/* History Button for Winner */}
-                   <button 
-                     onClick={() => setShowHistory(true)}
-                     className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm text-white"
-                   >
-                     <Clock size={16}/> View Songs
-                   </button>
-
+                   <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl text-white">Final Score: {myScore}</div>
+                   <button onClick={() => setShowHistory(true)} className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm text-white"><Clock size={16}/> View Songs</button>
                    <div className="mt-8 flex gap-2">
-                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
-                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
-                       <Star className="text-yellow-300 animate-spin-slow" size={32}/>
+                       <Star className="text-yellow-300 animate-spin-slow" size={32}/><Star className="text-yellow-300 animate-spin-slow" size={32}/><Star className="text-yellow-300 animate-spin-slow" size={32}/>
                    </div>
                </div>
            );
@@ -1092,18 +855,11 @@ const PlayerView = ({ gameId, user, username }) => {
                            {game.winner?.avatar && <img src={game.winner.avatar} className="w-16 h-16 rounded-full border-2 border-yellow-500 mb-2 object-cover bg-slate-800" />}
                            <div className="text-2xl md:text-3xl font-bold text-yellow-500">{game.winner?.username}</div>
                        </div>
-                       
                        <div className="border-t border-slate-700 pt-6 mb-6">
                            <div className="text-slate-400 text-sm uppercase font-bold tracking-widest mb-2">Your Score</div>
                            <div className="text-2xl font-bold text-white">{myScore}</div>
                        </div>
-
-                       <button 
-                         onClick={() => setShowHistory(true)}
-                         className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"
-                       >
-                         <Clock size={18}/> View Song History
-                       </button>
+                       <button onClick={() => setShowHistory(true)} className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-center gap-2 text-white"><Clock size={18}/> View Song History</button>
                    </div>
                    <p className="mt-8 text-slate-500 animate-pulse">Waiting for host...</p>
                </div>
@@ -1111,7 +867,6 @@ const PlayerView = ({ gameId, user, username }) => {
        }
   }
 
-  // 2. Locked Out (Guessed Wrong already)
   if (isLockedOut && !game.buzzerWinner && game.status === 'playing') {
        return (
         <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
@@ -1121,7 +876,6 @@ const PlayerView = ({ gameId, user, username }) => {
        );
   }
 
-  // 3. Someone Else Buzzed
   if (game.buzzerWinner && !isMe && game.status !== 'revealed') {
     return (
       <div className="min-h-screen bg-red-900/20 flex flex-col items-center justify-center p-6 text-center">
@@ -1134,7 +888,6 @@ const PlayerView = ({ gameId, user, username }) => {
     );
   }
 
-  // 4. I Buzzed! Input time.
   if (isMe && game.status !== 'revealed') {
     return (
       <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
@@ -1152,35 +905,24 @@ const PlayerView = ({ gameId, user, username }) => {
                  onKeyDown={e => e.key === 'Enter' && submitAnswer()}
                />
                <div className="flex gap-2">
-                 <button 
-                  onClick={() => submitAnswer()}
-                  className="flex-1 bg-white text-green-900 py-4 rounded-xl font-black text-xl shadow-xl active:scale-95 transition-transform"
-                 >
-                   SUBMIT
-                 </button>
+                 <button onClick={() => submitAnswer()} className="flex-1 bg-white text-green-900 py-4 rounded-xl font-black text-xl shadow-xl active:scale-95 transition-transform">SUBMIT</button>
                </div>
              </>
            ) : (
-             <div className="text-white text-center text-xl font-bold animate-pulse">
-               Judging...
-             </div>
+             <div className="text-white text-center text-xl font-bold animate-pulse">Judging...</div>
            )}
         </div>
       </div>
     );
   }
 
-  // 5. Reveal / Result
   if (game.status === 'revealed') {
     const scoreText = game.lastRoundScore > 0 ? `+${game.lastRoundScore}` : "0";
     const winnerText = game.lastRoundScore > 0 ? "Correct!" : "Wrong!";
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
          <div className="mb-6 relative w-full flex justify-center">
-            <img 
-                src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} 
-                className="max-h-[50vh] w-auto max-w-full rounded-xl shadow-2xl object-contain" 
-            />
+            <img src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="max-h-[50vh] w-auto max-w-full rounded-xl shadow-2xl object-contain" />
             <div className="absolute -bottom-4 bg-blue-600 text-white p-3 rounded-full shadow-lg font-bold">
                {game.lastRoundScore > 0 ? <Check size={24}/> : <X size={24}/>}
             </div>
@@ -1188,26 +930,16 @@ const PlayerView = ({ gameId, user, username }) => {
          <h2 className="text-2xl font-bold mb-1 text-white">{game.currentSong.movie}</h2>
          <p className="text-slate-400 mb-8">{game.currentSong.title}</p>
          
-         {isMe && (
-           <div className={`text-3xl md:text-4xl font-black ${game.lastRoundScore > 0 ? 'text-green-400' : 'text-red-400'}`}>
-             {winnerText} ({scoreText})
-           </div>
-         )}
-         {!isMe && game.buzzerWinner && (
-            <div className="text-xl text-slate-500">
-               {game.buzzerWinner.username} got {scoreText}
-            </div>
-         )}
+         {isMe && (<div className={`text-3xl md:text-4xl font-black ${game.lastRoundScore > 0 ? 'text-green-400' : 'text-red-400'}`}>{winnerText} ({scoreText})</div>)}
+         {!isMe && game.buzzerWinner && (<div className="text-xl text-slate-500">{game.buzzerWinner.username} got {scoreText}</div>)}
       </div>
     );
   }
 
-  // 6. Default Buzzer State
   const votedSkip = game.skips?.includes(user.uid);
   
   return (
     <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative h-screen">
-       {/* Player HUD */}
        <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10 shrink-0">
            <div className="flex items-center gap-2">
                {myAvatar && <img src={myAvatar} className="w-10 h-10 rounded-full border border-slate-500 object-cover bg-slate-700" />}
@@ -1235,22 +967,14 @@ const PlayerView = ({ gameId, user, username }) => {
        )}
        
        <div className="flex-1 flex flex-col items-center justify-center relative p-4 w-full max-w-full">
-          <button 
-             onClick={buzzIn}
-             className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group"
-          >
-             <span className="text-5xl md:text-7xl font-black text-red-900 group-hover:text-red-100 transition-colors">BUZZ</span>
+          <button onClick={buzzIn} className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group">
+             <span className="text-5xl md:text-7xl font-black text-red-100 group-hover:text-white transition-colors">BUZZ</span>
           </button>
           <p className="mt-8 text-slate-400 font-medium animate-pulse text-center">Wait for the music...</p>
        </div>
 
-       {/* Bottom Actions */}
        <div className="p-4 md:p-6 shrink-0 safe-area-bottom">
-           <button 
-             onClick={voteSkip}
-             disabled={votedSkip}
-             className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${votedSkip ? 'bg-slate-700 text-slate-500' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
-           >
+           <button onClick={voteSkip} disabled={votedSkip} className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${votedSkip ? 'bg-slate-700 text-slate-500' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>
                <FastForward size={20} />
                {votedSkip ? "Voted to Skip" : "Vote to Skip Song"}
            </button>
@@ -1268,7 +992,6 @@ export default function App() {
   const [username, setUsername] = useState("");
   const [authError, setAuthError] = useState(null);
 
-  // Auth Init
   useEffect(() => {
     if (firebaseConfig.apiKey === "REPLACE_WITH_YOUR_API_KEY") {
         setAuthError("Configuration Missing: Please set up your Firebase keys in the code.");
@@ -1321,7 +1044,6 @@ export default function App() {
     const snap = await getDoc(gameRef);
     
     if (snap.exists()) {
-      // Add player to subcollection
       const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', code, 'players', user.uid);
       await setDoc(playerRef, {
         username: name,
@@ -1351,9 +1073,8 @@ export default function App() {
   if (mode === 'host' && gameId) return <HostView gameId={gameId} user={user} />;
   if (mode === 'player' && gameId) return <PlayerView gameId={gameId} user={user} username={username} />;
 
-  // Initial State: user clicked "Host" but hasn't created game yet
   if (mode === 'host' && !gameId) {
-    handleCreateGame(); // Auto create
+    handleCreateGame();
     return <div className="h-screen bg-slate-950 flex items-center justify-center text-white">Creating Room...</div>;
   }
 

@@ -333,7 +333,6 @@ export const CATEGORIES = {
     { title: "Again", artist: "YUI", movie: "Fullmetal Alchemist: Brotherhood", year: 2009 },
     { title: "Colors", artist: "FLOW", movie: "Code Geass", year: 2006 },
     { title: "Crossing Field", artist: "LiSA", movie: "Sword Art Online", year: 2012 },
-    { title: "History Maker", artist: "Dean Fujioka", movie: "Yuri!!! on Ice", year: 2016 },
     { title: "Red Swan", artist: "Yoshiki", movie: "Attack on Titan", year: 2018 },
     { title: "Shinzou wo Sasageyo!", artist: "Linked Horizon", movie: "Attack on Titan", year: 2017 },
     { title: "Guren no Yumiya", artist: "Linked Horizon", movie: "Attack on Titan", year: 2013 },
