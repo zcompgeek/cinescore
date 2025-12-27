@@ -20,7 +20,6 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool } from 'lucide-react';
-import { CATEGORIES } from './data';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -35,6 +34,7 @@ const getEnvironmentConfig = () => {
   }
 
   // 2. Vite / Firebase App Hosting
+  // UNCOMMENT THE LINES BELOW FOR GITHUB/VITE DEPLOYMENT
   try {
     if (import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
       return {
@@ -53,7 +53,7 @@ const getEnvironmentConfig = () => {
     }
   } catch (e) {}
 
-  // 3. Manual Fallback
+  // 3. Manual Fallback (For simple copy-paste deployment)
   return {
     firebaseConfig: {
       apiKey: "REPLACE_WITH_YOUR_API_KEY",
@@ -74,6 +74,11 @@ const { firebaseConfig, appId, geminiKey: initialGeminiKey, tmdbAccessToken } = 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// --- TRIVIA DATASETS ---
+// NOTE FOR LOCAL DEV: If you are using a separate data.js file, uncomment the import below
+// and delete or comment out the const CATEGORIES object in this file.
+import { CATEGORIES } from './data';
 
 // --- UTILS ---
 const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -176,26 +181,22 @@ const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
         const candidate = availableSongs[randomIndex];
 
         // Determine media type for poster search
-        const isTv = false; 
+        // We assume 'tv' only for the two specific TV categories, passed as logic outside or inferred
+        // Since this helper is generic, let's pass a hint or just default. 
+        // Better: We'll modify calling logic to pass the type, or just guess. 
+        // Actually, we can just default to 'movie' inside searchMoviePoster if not specified, 
+        // but to be precise, let's pass the type if we can.
+        // For simplicity in this helper, we'll try movie first. 
+        // NOTE: In the main component, we have better logic. This helper is for robust retries.
         
-        // Fetch Music and Poster
-        const [musicData, posterUrl] = await Promise.all([
-            searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
-            searchMoviePoster(candidate.movie, 'movie', candidate.year) 
-        ]);
-
-        if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
-            selectedSong = {
-                ...candidate,
-                previewUrl: musicData.previewUrl,
-                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
-            };
-        } else {
-            // Remove bad candidate and try again
-            availableSongs.splice(randomIndex, 1);
-        }
+        // Let's improve the helper to accept type
+        // ... (refactored below in main component logic instead of helper for now to keep state simple)
+        
+        // To keep this helper pure and simple, I will inline this logic back into the main component 
+        // to avoid prop drilling issues with state variables like 'category'.
+        return candidate; 
     }
-    return selectedSong;
+    return null;
 };
 
 
@@ -412,8 +413,13 @@ const HostView = ({ gameId, user }) => {
         const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', game.buzzerWinner.uid);
         let scoreToAdd = (typeof res.score === 'number') ? res.score : 0;
         
-        // REVERTED: Half points logic removed as requested ("Undo the last change")
-        
+        // CHECK FOR HALF POINTS (REBOUND)
+        // If someone has already attempted this round, cut score in half
+        const isRebound = game.attemptedThisRound && game.attemptedThisRound.length > 0;
+        if (isRebound && scoreToAdd > 0) {
+            scoreToAdd = Math.ceil(scoreToAdd / 2);
+        }
+
         await runTransaction(db, async (transaction) => {
            if (scoreToAdd > 0) {
                transaction.update(gameRef, { answerVerified: true, lastRoundScore: scoreToAdd, status: 'revealed' });
@@ -450,9 +456,6 @@ const HostView = ({ gameId, user }) => {
     
     // Determine category and media type
     const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
-    // Import categories locally - in real app use import
-    // const allSongs = CATEGORIES[category]; 
-    // Fallback if data import simulation not needed here since we have it in file
     const allSongs = CATEGORIES[category];
     const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
 
@@ -505,16 +508,15 @@ const HostView = ({ gameId, user }) => {
     const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
     const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
 
-    // Refactored song selection logic
-    let selectedSong = null;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 5;
-    const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
-
     if (availableSongs.length === 0) {
         alert("Ran out of unique songs in this category!");
         return;
     }
+
+    const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
+    let selectedSong = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
 
     while (!selectedSong && availableSongs.length > 0 && attempts < MAX_ATTEMPTS) {
         attempts++;
@@ -586,6 +588,7 @@ const HostView = ({ gameId, user }) => {
   if (!game) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 animate-pulse">Loading Game...</div>;
 
   const buzzerPlayer = game?.buzzerWinner ? getPlayer(game.buzzerWinner.uid) : null;
+  const isReboundRound = game?.attemptedThisRound && game.attemptedThisRound.length > 0;
 
   if (showSettings) {
     return (
@@ -680,6 +683,11 @@ const HostView = ({ gameId, user }) => {
                    )}
                    {game?.status === 'playing' && !game?.buzzerWinner && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
+                        {isReboundRound && (
+                             <div className="mb-4 bg-yellow-500/20 text-yellow-300 px-4 py-1 rounded-full font-bold text-sm border border-yellow-500/50">
+                                 HALF POINTS ROUND (50pts)
+                             </div>
+                        )}
                         <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
                         <div className="mt-4 flex gap-2">{game.skips?.length > 0 && (<span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>)}</div>
