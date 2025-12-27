@@ -17,10 +17,10 @@ import {
   runTransaction,
   arrayUnion,
   increment,
-  writeBatch,
-  serverTimestamp
+  writeBatch
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool, MessageCircle, Hourglass } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool, History } from 'lucide-react';
+import { CATEGORIES } from './data';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -35,6 +35,7 @@ const getEnvironmentConfig = () => {
   }
 
   // 2. Vite / Firebase App Hosting
+  // UNCOMMENT THE LINES BELOW FOR GITHUB/VITE DEPLOYMENT  
   try {
     if (import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
       return {
@@ -52,8 +53,9 @@ const getEnvironmentConfig = () => {
       };
     }
   } catch (e) {}
+  
 
-  // 3. Manual Fallback
+  // 3. Manual Fallback (For simple copy-paste deployment)
   return {
     firebaseConfig: {
       apiKey: "REPLACE_WITH_YOUR_API_KEY",
@@ -75,37 +77,26 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- TRIVIA DATASETS ---
-// NOTE FOR LOCAL DEV: Uncomment the line below and remove the const CATEGORIES block.
-import { CATEGORIES } from './data';
-
 // --- UTILS ---
 const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
-// Gemini Batch Answer Verification
-const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
-  if (!apiKey || apiKey === "") {
-      console.error("[JUDGE] Error: No API Key provided.");
-      return submissionsList.map(s => ({ uid: s.uid, score: 0 })); // Fail safe
-  }
+// Gemini Answer Verification
+const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
+  if (!apiKey || apiKey === "") return { score: 0, reason: "Error: No API Key." };
   
-  // Prepare the guesses for the prompt
-  const guessesString = submissionsList.map(s => `ID: ${s.uid}, Guess: "${s.answer}"`).join("\n");
-
+  if (userAnswer === "TIMEOUT") return { score: 0, reason: "Time out" };
+  
   const prompt = `
     I am a trivia game judge.
     The correct movie answer is: "${correctMovie}".
+    The player guessed: "${userAnswer}".
     
-    Here is a list of player guesses:
-    ${guessesString}
-    
-    For each guess, determine the score based on these rules:
+    Rules:
     1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V"), award 100 points.
     2. If the guess is the correct franchise but not the specific movie, award 50 points.
     3. If the guess is wrong, award 0 points.
     
-    Return ONLY a raw JSON array of objects with 'uid' and 'score':
-    [{"uid": "...", "score": ...}, ...]
+    Return ONLY a raw JSON object: {"score": number, "reason": "short explanation"}
   `;
 
   try {
@@ -121,25 +112,13 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
       }
     );
     
-    if (!response.ok) throw new Error(`API Error ${response.status}`);
-
+    if (!response.ok) return { score: 0, reason: `API Error ${response.status}` };
     const data = await response.json();
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    const result = JSON.parse(resultText);
-    
-    if (!Array.isArray(result)) throw new Error("Invalid response format");
-    
+    const result = JSON.parse(data.candidates[0].content.parts[0].text);
     return result;
   } catch (e) {
-    console.error("[JUDGE] Exception during batch verification:", e);
-    // Fallback: simple exact match
-    const normalizedCorrect = correctMovie.toLowerCase();
-    return submissionsList.map(s => {
-        const normalizedGuess = s.answer.toLowerCase();
-        let score = 0;
-        if (normalizedCorrect.includes(normalizedGuess) || normalizedGuess.includes(normalizedCorrect)) score = 100;
-        return { uid: s.uid, score };
-    });
+    console.error("Gemini Verification Error", e);
+    return { score: 0, reason: "Verification Error" };
   }
 };
 
@@ -201,27 +180,22 @@ const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
         const candidate = availableSongs[randomIndex];
 
         // Determine media type for poster search
-        // We'll rely on the candidate object structure or defaults
-        const isTv = false; // We can improve this if we pass category type, but for now default to movie/generic
+        // We assume 'tv' only for the two specific TV categories, passed as logic outside or inferred
+        // Since this helper is generic, let's pass a hint or just default. 
+        // Better: We'll modify calling logic to pass the type, or just guess. 
+        // Actually, we can just default to 'movie' inside searchMoviePoster if not specified, 
+        // but to be precise, let's pass the type if we can.
+        // For simplicity in this helper, we'll try movie first. 
+        // NOTE: In the main component, we have better logic. This helper is for robust retries.
         
-        // Fetch Music and Poster
-        const [musicData, posterUrl] = await Promise.all([
-            searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
-            searchMoviePoster(candidate.movie, 'movie', candidate.year) 
-        ]);
-
-        if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
-            selectedSong = {
-                ...candidate,
-                previewUrl: musicData.previewUrl,
-                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
-            };
-        } else {
-            // Remove bad candidate and try again
-            availableSongs.splice(randomIndex, 1);
-        }
+        // Let's improve the helper to accept type
+        // ... (refactored below in main component logic instead of helper for now to keep state simple)
+        
+        // To keep this helper pure and simple, I will inline this logic back into the main component 
+        // to avoid prop drilling issues with state variables like 'category'.
+        return candidate; 
     }
-    return selectedSong;
+    return null;
 };
 
 
@@ -375,7 +349,6 @@ const HostView = ({ gameId, user }) => {
   const [totalRounds, setTotalRounds] = useState(10);
   const [showSettings, setShowSettings] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
-  const [roundTimeLeft, setRoundTimeLeft] = useState(60);
   const audioRef = useRef(null);
   const [verification, setVerification] = useState(null);
 
@@ -391,120 +364,84 @@ const HostView = ({ gameId, user }) => {
     return () => { unsubGame(); unsubPlayers(); };
   }, [gameId]);
 
-  // Global Round Timer
-  useEffect(() => {
-      if (game?.status === 'playing') {
-          if (roundTimeLeft > 0) {
-              const timer = setTimeout(() => setRoundTimeLeft(t => t - 1), 1000);
-              return () => clearTimeout(timer);
-          }
-          // If 0, logic is handled in check block below to trigger end of round
-      } else {
-          setRoundTimeLeft(60); // Reset for next round
-      }
-  }, [roundTimeLeft, game?.status]);
-
   useEffect(() => {
     if (audioRef.current) {
-      if (game?.status === 'playing' && game?.currentSong?.previewUrl) {
+      if (game?.status === 'playing' && game?.currentSong?.previewUrl && !game?.buzzerWinner) {
         if (audioRef.current.src !== game.currentSong.previewUrl) {
             audioRef.current.src = game.currentSong.previewUrl;
             audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
         } else if (audioRef.current.paused) {
             audioRef.current.play().catch(e => console.log("Autoplay blocked", e));
         }
-      } else if (game?.status === 'revealed' || game?.status === 'game_over') {
+      } else if (game?.buzzerWinner || game?.status === 'revealed' || game?.status === 'game_over') {
         audioRef.current.pause();
       }
     }
-  }, [game?.currentSong?.previewUrl, game?.status]);
+  }, [game?.currentSong?.previewUrl, game?.status, game?.buzzerWinner]);
 
-  // ROUND MANAGEMENT LOGIC
   useEffect(() => {
-    if (!game || game.status !== 'playing') return;
-
-    // Check End of Round Conditions
-    const activePlayerCount = players.length;
-    const submissions = game.submissions || {};
-    const skips = game.skips || [];
-    
-    const submittedUids = Object.keys(submissions);
-    // A player is "done" if they have submitted OR they voted to skip
-    const donePlayers = new Set([...submittedUids, ...skips]);
-    const allDone = activePlayerCount > 0 && donePlayers.size >= activePlayerCount;
-    const timeUp = roundTimeLeft === 0;
-
-    if (allDone || timeUp) {
-        // ROUND COMPLETE - VERIFY BATCH AND SCORE
-        const finalizeRound = async () => {
-            // Optimistic update to prevent re-entry
-            // Ideally we'd set status='processing', but we'll jump to verification directly
-            const apiKey = initialGeminiKey;
-            
-            // Prepare unverified submissions
-            const submissionsList = Object.keys(submissions).map(uid => ({
-                uid,
-                answer: submissions[uid].answer
-            }));
-            
-            let results = [];
-            if (submissionsList.length > 0) {
-                 results = await verifyBatchAnswers(submissionsList, game.currentSong.movie, apiKey);
-            }
-
-            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-            const buzzes = game.buzzes || [];
-            const batch = writeBatch(db);
-            
-            // Assign points with penalty logic
-            let correctCountBefore = 0;
-            let roundWinnerCount = 0;
-            
-            // We need to iterate the original buzz order to maintain sequence
-            for (const buzz of buzzes) {
-                // Find verification result
-                const res = results.find(r => r.uid === buzz.uid);
-                const score = res ? res.score : 0;
-                const isCorrect = score > 0;
-
-                if (isCorrect) {
-                    // This player was correct. 
-                    // Calculate their score: Base (from Gemini) - (10 * correctCountBefore)
-                    const finalScore = Math.max(10, score - (correctCountBefore * 10)); // Min 10 points
-                    
-                    const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', buzz.uid);
-                    batch.update(playerRef, { score: increment(finalScore) });
-                    
-                    // Increment penalty counter for NEXT correct person
-                    correctCountBefore++;
-                    roundWinnerCount++;
-                }
-                
-                // Update submission status in game object for UI
-                // Note: Firestore maps are tricky to partial update inside arrays/maps deeply without replacement or specific dot notation
-                // We'll skip granular status update in DB for speed and just reveal
-            }
-            
-            // Update game state to revealed
-            batch.update(gameRef, {
-                status: 'revealed',
-                lastRoundScore: 0, 
-                roundWinnerCount: roundWinnerCount,
-                // Store results for the UI to show who got it right
-                roundResults: results
-            });
-            
-            await batch.commit();
-        };
-        // Ensure we only run this once by checking a local ref or rely on status change
-        // We rely on status changing to 'revealed' inside finalizeRound to break the effect loop
-        finalizeRound();
+    if (game?.status === 'playing' && game.skips && players.length > 0) {
+      const activePlayerCount = players.length;
+      const skipCount = game.skips.length;
+      // SKIP LOGIC: If everyone has either requested skip OR guessed incorrectly (locked out)
+      const lockedOutPlayers = game.attemptedThisRound || [];
+      const playersWhoSkippedOrGuessed = new Set([...game.skips, ...lockedOutPlayers]);
+      
+      if (playersWhoSkippedOrGuessed.size >= activePlayerCount) {
+          giveUp(); // Auto-skip/reveal
+      }
     }
+  }, [game?.skips, players.length, game?.status, game?.attemptedThisRound]);
 
-  }, [game?.submissions, game?.skips, players.length, game?.status, roundTimeLeft]);
+  // RESET VERIFICATION STATE WHEN ROUND RESETS
+  useEffect(() => {
+    if (!game?.currentAnswer) {
+        setVerification(null);
+    }
+  }, [game?.currentAnswer]);
 
+  useEffect(() => {
+    if (game?.currentAnswer && !game?.answerVerified && !verification) {
+      const verify = async () => {
+        setVerification({ status: 'checking' });
+        const apiKey = initialGeminiKey; 
+        const res = await verifyAnswerWithGemini(game.currentAnswer, game.currentSong.movie, apiKey); 
+        setVerification(res); 
+        
+        const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+        const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', game.buzzerWinner.uid);
+        let scoreToAdd = (typeof res.score === 'number') ? res.score : 0;
+        
+        // CHECK FOR HALF POINTS (REBOUND)
+        // If someone has already attempted this round, cut score in half
+        const isRebound = game.attemptedThisRound && game.attemptedThisRound.length > 0;
+        if (isRebound && scoreToAdd > 0) {
+            scoreToAdd = Math.ceil(scoreToAdd / 2);
+        }
 
-  // Auto-Advance
+        await runTransaction(db, async (transaction) => {
+           if (scoreToAdd > 0) {
+               transaction.update(gameRef, { answerVerified: true, lastRoundScore: scoreToAdd, status: 'revealed' });
+               transaction.update(playerRef, { score: increment(scoreToAdd) });
+           } else {
+               const currentAttempts = game.attemptedThisRound || [];
+               const allAttempts = [...currentAttempts, game.buzzerWinner.uid];
+               // Check if EVERYONE has attempted
+               const allFailed = allAttempts.length >= players.length;
+
+               if (allFailed) {
+                   transaction.update(gameRef, { answerVerified: true, lastRoundScore: 0, status: 'revealed', feedbackMessage: "Everyone missed it! The answer is revealed." });
+               } else {
+                   transaction.update(gameRef, { buzzerWinner: null, buzzerLocked: false, currentAnswer: null, answerVerified: false, attemptedThisRound: arrayUnion(game.buzzerWinner.uid), feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!` });
+                   setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
+               }
+           }
+        });
+      };
+      verify();
+    }
+  }, [game?.currentAnswer, game?.answerVerified, players.length]);
+
   useEffect(() => {
       let timer;
       if (game?.status === 'revealed') {
@@ -513,17 +450,12 @@ const HostView = ({ gameId, user }) => {
       return () => clearTimeout(timer);
   }, [game?.status]);
 
-
   const startGame = async () => {
     setShowSettings(false);
     
     // Determine category and media type
     const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
-    // const allSongs = CATEGORIES[category]; // In local, use import
-    const allSongs = CATEGORIES[category]; 
-    if (!allSongs || allSongs.length === 0) {
-        alert("Category empty!"); return;
-    }
+    const allSongs = CATEGORIES[category];
     const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
 
     // Fetch First Song
@@ -545,13 +477,15 @@ const HostView = ({ gameId, user }) => {
       status: 'playing',
       round: 1, 
       totalRounds: totalRounds,
-      playedSongs: [ { title: trackData.title, artist: trackData.artist, movie: trackData.movie, coverArt } ], 
+      playedSongs: [ { title: trackData.title, artist: trackData.artist, movie: trackData.movie, coverArt } ], // Init with first song
       skips: [],
-      buzzes: [],      
-      submissions: {}, 
+      winner: null,
+      buzzerWinner: null,
+      currentAnswer: null,
+      answerVerified: false,
       currentSong: { ...trackData, previewUrl, coverArt },
-      feedbackMessage: null,
-      roundResults: []
+      attemptedThisRound: [],
+      feedbackMessage: null
     });
     
     await batch.commit();
@@ -560,8 +494,7 @@ const HostView = ({ gameId, user }) => {
   const nextRound = async () => {
     setVerification(null);
     if (game?.round >= game?.totalRounds) {
-        const sortedPlayers = [...players].sort((a,b) => b.score - a.score);
-        const winner = sortedPlayers.length > 0 ? sortedPlayers[0] : null; 
+        const winner = players.length > 0 ? players[0] : null; 
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: 'game_over',
             winner: winner ? { uid: winner.id, username: winner.username, score: winner.score, avatar: winner.avatar } : null
@@ -612,6 +545,9 @@ const HostView = ({ gameId, user }) => {
 
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
       currentSong: selectedSong,
+      buzzerWinner: null,
+      currentAnswer: null,
+      answerVerified: false,
       status: 'playing',
       round: increment(1),
       playedSongs: arrayUnion({
@@ -621,16 +557,16 @@ const HostView = ({ gameId, user }) => {
           coverArt: selectedSong.coverArt
       }),
       skips: [],
-      buzzes: [],
-      submissions: {},
-      feedbackMessage: null,
-      roundResults: []
+      attemptedThisRound: [],
+      feedbackMessage: null
     });
   };
 
   const giveUp = async () => {
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-       status: 'revealed'
+       status: 'revealed',
+       lastRoundScore: 0,
+       buzzerWinner: null 
      });
   };
 
@@ -639,15 +575,19 @@ const HostView = ({ gameId, user }) => {
           status: 'lobby',
           winner: null,
           currentSong: null,
-          buzzerWinner: null,
-          buzzes: [],
-          submissions: {}
+          buzzerWinner: null
       });
       setShowSettings(true);
       setShowHistory(false);
   };
   
   const getPlayer = (uid) => players.find(p => p.id === uid);
+  
+  // Guard clause for HostView render to prevent white screen crash
+  if (!game) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 animate-pulse">Loading Game...</div>;
+
+  const buzzerPlayer = game?.buzzerWinner ? getPlayer(game.buzzerWinner.uid) : null;
+  const isReboundRound = game?.attemptedThisRound && game.attemptedThisRound.length > 0;
 
   if (showSettings) {
     return (
@@ -701,10 +641,6 @@ const HostView = ({ gameId, user }) => {
     );
   }
 
-  // Calculate stats for display
-  const buzzes = game?.buzzes || [];
-  const submissions = game?.submissions || {};
-
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col h-screen overflow-hidden">
        <audio ref={audioRef} loop />
@@ -713,11 +649,6 @@ const HostView = ({ gameId, user }) => {
              <div className="bg-blue-600 px-2 py-1 md:px-3 md:py-1 rounded font-bold text-xs md:text-sm whitespace-nowrap">R {game?.round} / {game?.totalRounds}</div>
              <div className="text-slate-400 font-mono text-lg md:text-xl">{gameId}</div>
           </div>
-          {game?.status === 'playing' && (
-              <div className="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded text-yellow-400 font-mono font-bold">
-                  <Clock size={16} /> {roundTimeLeft}s
-              </div>
-          )}
           <div className="flex gap-2">
              <button onClick={giveUp} className="px-3 py-1 bg-slate-800 text-slate-300 text-xs rounded hover:bg-slate-700">Skip Song</button>
              <button onClick={() => setShowSettings(true)} className="text-xs text-slate-500 hover:text-white">Settings</button>
@@ -735,51 +666,44 @@ const HostView = ({ gameId, user }) => {
              )}
              <div className="z-10 w-full max-w-4xl text-center">
                 <div className="mb-4 md:mb-8">
-                   
-                   {/* SHOW LIVE BUZZES */}
-                   {game?.status === 'playing' && buzzes.length > 0 && (
-                       <div className="flex flex-col items-center gap-4 mb-8">
-                           <h3 className="text-2xl font-bold animate-pulse text-yellow-400">Answering...</h3>
-                           <div className="flex flex-wrap justify-center gap-3">
-                               {buzzes.map((b, i) => {
-                                   const player = getPlayer(b.uid);
-                                   const hasSubmitted = submissions[b.uid]?.status === 'pending' || submissions[b.uid]?.status === 'verified';
-                                   
-                                   return (
-                                       <div key={b.uid} className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 ${hasSubmitted ? 'bg-green-600/50 border-green-400' : 'bg-slate-800/80 border-yellow-500'}`}>
-                                           {player?.avatar ? <img src={player.avatar} className="w-8 h-8 rounded-full border border-white" /> : <div className="w-8 h-8 bg-white/20 rounded-full"/>}
-                                           <span className="font-bold">{b.username}</span>
-                                           {hasSubmitted && <Check size={16} className="text-green-400"/>}
-                                       </div>
-                                   );
-                               })}
-                           </div>
+                   {game?.feedbackMessage && (
+                       <div className="absolute top-0 left-0 right-0 p-4 flex justify-center z-50 animate-bounce-short">
+                           <div className="bg-red-600 text-white px-4 md:px-6 py-2 rounded-full font-bold shadow-lg text-sm md:text-base">{game.feedbackMessage}</div>
                        </div>
                    )}
-
-                   {/* GAME OVER STATE */}
                    {game?.status === 'game_over' && (
                        <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
                            {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
                            <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
                            <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
-                           <div className="text-xl md:text-2xl mb-6 md:mb-8">
-                               Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span>
-                               <div className="text-slate-400 text-lg">Score: {game.winner?.score}</div>
-                           </div>
-                           <button 
-                             onClick={handleNewGame}
-                             className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"
-                           >
-                             <RefreshCw size={20}/> Setup New Game
-                           </button>
+                           <div className="text-xl md:text-2xl mb-6 md:mb-8">Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span><div className="text-slate-400 text-lg">Score: {game.winner?.score}</div></div>
+                           <button onClick={handleNewGame} className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"><RefreshCw size={20}/> Setup New Game</button>
                        </div>
                    )}
-                   {game?.status === 'playing' && buzzes.length === 0 && (
+                   {game?.status === 'playing' && !game?.buzzerWinner && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
+                        {isReboundRound && (
+                             <div className="mb-4 bg-yellow-500/20 text-yellow-300 px-4 py-1 rounded-full font-bold text-sm border border-yellow-500/50">
+                                 HALF POINTS ROUND (50pts)
+                             </div>
+                        )}
                         <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
                         <div className="mt-4 flex gap-2">{game.skips?.length > 0 && (<span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>)}</div>
+                     </div>
+                   )}
+                   {game?.buzzerWinner && game?.status !== 'revealed' && game?.status !== 'game_over' && (
+                     <div className="flex flex-col items-center text-yellow-400 animate-bounce-short pt-8">
+                        {buzzerPlayer?.avatar ? (
+                            <div className="mb-6 bg-slate-800 p-2 rounded-full shadow-2xl">
+                              <img src={buzzerPlayer.avatar} className="w-56 h-56 md:w-80 md:h-80 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
+                            </div>
+                        ) : (
+                            <AlertCircle size={80} className="mb-6 md:w-32 md:h-32" />
+                        )}
+                        <h2 className="text-4xl md:text-6xl font-black mb-4">{game.buzzerWinner.username}</h2>
+                        <p className="text-white text-xl md:text-2xl animate-pulse">Is Guessing...</p>
+                        {game.currentAnswer && <p className="mt-6 bg-slate-800 px-6 py-3 rounded-xl text-xl">Processing: "{game.currentAnswer}"</p>}
                      </div>
                    )}
                    {game?.status === 'revealed' && (
@@ -790,9 +714,13 @@ const HostView = ({ gameId, user }) => {
                            <p className="text-blue-400 text-xl md:text-2xl font-bold">{game.currentSong.title}</p>
                            <p className="text-slate-500 text-lg">{game.currentSong.artist}</p>
                         </div>
-                        <div className="text-center mb-6">
-                            <p className="text-green-400 font-bold text-xl">{game.roundWinnerCount || 0} Correct Guesses!</p>
+                        <div className={`p-4 rounded-xl font-bold text-lg md:text-xl mb-6 flex flex-col items-center gap-2 ${game.lastRoundScore > 0 ? 'bg-green-600/20 text-green-400 border border-green-600/50' : 'bg-red-600/20 text-red-400 border border-red-600/50'}`}>
+                           {buzzerPlayer?.avatar && (<img src={buzzerPlayer.avatar} className="w-12 h-12 rounded-full border-2 border-current bg-slate-800 object-cover" />)}
+                           <span>{game.lastRoundScore > 0 ? `+${game.lastRoundScore} Points to ${game.buzzerWinner?.username || 'Winner'}` : (game.buzzerWinner ? `${game.buzzerWinner.username} Missed It!` : (game.feedbackMessage?.includes("Everyone") ? "Everyone Missed!" : "Time's Up!"))}</span>
                         </div>
+                        {game.lastRoundScore === 0 && verification?.reason && verification.reason.includes("Error") && (
+                            <p className="text-red-300 text-sm mb-4 bg-red-900/50 p-2 rounded">{verification.reason}</p>
+                        )}
                         <button onClick={nextRound} className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto text-xl shadow-lg">Next Round <SkipForward size={24}/></button>
                      </div>
                    )}
@@ -833,32 +761,18 @@ const PlayerView = ({ gameId, user, username }) => {
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
   const [showHistory, setShowHistory] = useState(false); 
-  const [timeLeft, setTimeLeft] = useState(10);
-  const [buzzerTime, setBuzzerTime] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(20);
 
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setGame(data);
-        if (data.status === 'playing') {
-            // Check if I have buzzed
-            const myBuzz = data.buzzes?.find(b => b.uid === user.uid);
-            if (myBuzz && !buzzerTime) setBuzzerTime(Date.now()); // Start timer ref
-            
-            // New round reset for answer input
-            if (!myBuzz && buzzerTime) {
-                setBuzzerTime(null);
-                setHasAnswered(false);
-                setAnswer("");
-                setTimeLeft(10);
-            }
+        if (data.status === 'playing' && !data.buzzerWinner && hasAnswered) {
+           setAnswer("");
+           setHasAnswered(false);
         }
-        if (data.status === 'lobby') {
-             setShowHistory(false);
-             setBuzzerTime(null);
-             setHasAnswered(false);
-        }
+        if (data.status === 'lobby') setShowHistory(false);
       }
     });
     const unsubPlayer = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', user.uid), (snap) => {
@@ -869,30 +783,31 @@ const PlayerView = ({ gameId, user, username }) => {
         }
     });
     return () => { unsubGame(); unsubPlayer(); };
-  }, [gameId, user.uid, buzzerTime]); // Added buzzerTime dependency
+  }, [gameId, hasAnswered, user.uid]);
 
-  const hasBuzzed = game?.buzzes?.some(b => b.uid === user.uid);
-  const hasSubmitted = game?.submissions?.[user.uid];
-
-  // Timer Effect
   useEffect(() => {
-    if (hasBuzzed && game?.status === 'playing' && !hasSubmitted) {
+    if (game?.buzzerWinner?.uid === user.uid && game?.status === 'playing' && !hasAnswered) {
         if (timeLeft > 0) {
             const timerId = setTimeout(() => setTimeLeft(t => t - 1), 1000);
             return () => clearTimeout(timerId);
         } else {
-            // Time up!
             submitAnswer("TIMEOUT");
         }
     } else {
-        // Reset if no longer my turn logic, though handled in main effect too
+        setTimeLeft(20);
     }
-  }, [timeLeft, hasBuzzed, game?.status, hasSubmitted]);
+  }, [timeLeft, game?.buzzerWinner, user.uid, game?.status, hasAnswered]);
 
   const buzzIn = async () => {
-    if (!game || hasBuzzed || game.status !== 'playing') return;
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-        buzzes: arrayUnion({ uid: user.uid, username: username, timestamp: Date.now() })
+    if (!game || game.buzzerWinner || game.status !== 'playing') return;
+    await runTransaction(db, async (transaction) => {
+      const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+      const sfDoc = await transaction.get(gameRef);
+      if (!sfDoc.exists()) return;
+      const currentData = sfDoc.data();
+      if (!currentData.buzzerWinner) {
+        transaction.update(gameRef, { buzzerWinner: { uid: user.uid, username: username }, buzzerLocked: true });
+      }
     });
   };
 
@@ -900,31 +815,19 @@ const PlayerView = ({ gameId, user, username }) => {
     const content = forceContent !== null ? forceContent : answer;
     if (!content.trim()) return;
     setHasAnswered(true);
-    // Use object map update for submission
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), { 
-        [`submissions.${user.uid}`]: {
-            answer: content,
-            status: 'pending', // Pending verification
-            uid: user.uid,
-            timestamp: Date.now()
-        }
-    });
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), { currentAnswer: content });
   };
 
   const voteSkip = async () => {
-      if (game.skips?.includes(user.uid)) return; // Already voted
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-          skips: arrayUnion(user.uid)
-      });
+      if (game.skips?.includes(user.uid)) return; 
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), { skips: arrayUnion(user.uid) });
   };
-
-  // -- RENDER STATES --
 
   if (!game) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
 
-  const isMe = hasBuzzed;
+  const isLockedOut = game.attemptedThisRound?.includes(user.uid);
+  const isMe = game.buzzerWinner?.uid === user.uid;
   
-  // 1. GAME OVER - Victory or Defeat
   if (game.status === 'game_over') {
        if (showHistory) {
            return (
@@ -987,13 +890,35 @@ const PlayerView = ({ gameId, user, username }) => {
        }
   }
 
-  if (hasBuzzed && game.status !== 'revealed') {
-    if (!hasSubmitted) {
-        return (
-          <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-2 animate-bounce">YOU'RE UP!</h1>
-            <div className="text-6xl font-mono font-bold text-yellow-400 mb-6">{timeLeft}</div>
-            <div className="w-full max-w-4xl space-y-4">
+  if (isLockedOut && !game.buzzerWinner && game.status === 'playing') {
+       return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+            <h1 className="text-2xl font-bold text-red-400 mb-2">Incorrect!</h1>
+            <p className="text-slate-400">You are locked out until the next song.</p>
+        </div>
+       );
+  }
+
+  if (game.buzzerWinner && !isMe && game.status !== 'revealed') {
+    return (
+      <div className="min-h-screen bg-red-900/20 flex flex-col items-center justify-center p-6 text-center">
+         <div className="p-6 bg-red-600 rounded-full mb-6 animate-pulse">
+           <Smartphone size={48} className="text-white"/>
+         </div>
+         <h1 className="text-2xl md:text-3xl font-black text-white mb-2">{game.buzzerWinner.username} LOCKED IN!</h1>
+         <p className="text-red-200">Wait for the next song...</p>
+      </div>
+    );
+  }
+
+  if (isMe && game.status !== 'revealed') {
+    return (
+      <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
+        <h1 className="text-3xl md:text-4xl font-black text-white mb-2 animate-bounce">YOU'RE UP!</h1>
+        <div className="text-6xl font-mono font-bold text-yellow-400 mb-6">{timeLeft}</div>
+        <div className="w-full max-w-4xl space-y-4">
+           {!hasAnswered ? (
+             <>
                <input 
                  autoFocus
                  className="w-full bg-white p-4 rounded-xl text-black text-xl font-bold text-center uppercase placeholder:text-gray-500"
@@ -1005,27 +930,18 @@ const PlayerView = ({ gameId, user, username }) => {
                <div className="flex gap-2">
                  <button onClick={() => submitAnswer()} className="flex-1 bg-white text-green-900 py-4 rounded-xl font-black text-xl shadow-xl active:scale-95 transition-transform">SUBMIT</button>
                </div>
-            </div>
-          </div>
-        );
-    } else {
-        return (
-            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
-                <div className="animate-pulse flex flex-col items-center">
-                    <MessageCircle size={48} className="mb-4" />
-                    <h2 className="text-2xl font-bold">Answer Submitted</h2>
-                    <p className="text-slate-400">Waiting for round to end...</p>
-                </div>
-            </div>
-        );
-    }
+             </>
+           ) : (
+             <div className="text-white text-center text-xl font-bold animate-pulse">Judging...</div>
+           )}
+        </div>
+      </div>
+    );
   }
 
   if (game.status === 'revealed') {
-    const myResult = game.roundResults?.find(r => r.uid === user.uid);
-    const score = myResult ? myResult.score : 0;
-    const isCorrect = score > 0;
-    
+    const scoreText = game.lastRoundScore > 0 ? `+${game.lastRoundScore}` : "0";
+    const winnerText = game.lastRoundScore > 0 ? "Correct!" : "Wrong!";
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
          <div className="mb-6 relative w-full flex justify-center">
@@ -1037,8 +953,8 @@ const PlayerView = ({ gameId, user, username }) => {
          <h2 className="text-2xl font-bold mb-1 text-white">{game.currentSong.movie}</h2>
          <p className="text-slate-400 mb-8">{game.currentSong.title}</p>
          
-         {hasBuzzed && (<div className={`text-3xl md:text-4xl font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>{isCorrect ? `CORRECT! (+${score})` : "WRONG!"}</div>)}
-         {!hasBuzzed && (<div className="text-xl text-slate-500">Time's Up!</div>)}
+         {isMe && (<div className={`text-3xl md:text-4xl font-black ${game.lastRoundScore > 0 ? 'text-green-400' : 'text-red-400'}`}>{winnerText} ({scoreText})</div>)}
+         {!isMe && game.buzzerWinner && (<div className="text-xl text-slate-500">{game.buzzerWinner.username} got {scoreText}</div>)}
       </div>
     );
   }
@@ -1089,3 +1005,101 @@ const PlayerView = ({ gameId, user, username }) => {
     </div>
   );
 };
+
+
+// 4. MAIN APP CONTROLLER
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [mode, setMode] = useState(null); // 'host' | 'player'
+  const [gameId, setGameId] = useState(null);
+  const [username, setUsername] = useState("");
+  const [authError, setAuthError] = useState(null);
+
+  useEffect(() => {
+    if (firebaseConfig.apiKey === "REPLACE_WITH_YOUR_API_KEY") {
+        setAuthError("Configuration Missing: Please set up your Firebase keys in the code.");
+        return;
+    }
+
+    let mounted = true;
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+           await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+           await signInAnonymously(auth);
+        }
+      } catch (e) {
+        console.error("Auth failed", e);
+        if (mounted) setAuthError(e.message);
+      }
+    };
+    initAuth();
+    const unsub = onAuthStateChanged(auth, u => {
+        if (mounted) setUser(u);
+    });
+    return () => {
+        mounted = false;
+        unsub();
+    }
+  }, []);
+
+  const handleCreateGame = async () => {
+    if (!user) return;
+    const newCode = generateCode();
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', newCode);
+    
+    await setDoc(gameRef, {
+      hostId: user.uid,
+      status: 'lobby',
+      createdAt: new Date(),
+      round: 0,
+      buzzerWinner: null,
+      scores: {}
+    });
+    
+    setGameId(newCode);
+  };
+
+  const handleJoinGame = async (code, name, avatar) => {
+    if (!user) return;
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', code);
+    const snap = await getDoc(gameRef);
+    
+    if (snap.exists()) {
+      const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', code, 'players', user.uid);
+      await setDoc(playerRef, {
+        username: name,
+        score: 0,
+        joinedAt: new Date(),
+        avatar: avatar || null
+      });
+      setGameId(code);
+      setUsername(name);
+      setMode('player');
+    } else {
+      alert("Game not found!");
+    }
+  };
+
+  if (authError) return (
+      <div className="h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6 text-center">
+          <AlertCircle className="text-red-500 mb-4" size={48} />
+          <h2 className="text-2xl font-bold mb-2">Connection Error</h2>
+          <p className="text-slate-400 mb-4">{authError}</p>
+          <p className="text-sm text-slate-600">If running locally, check your firebaseConfig settings.</p>
+      </div>
+  );
+
+  if (!user) return <div className="h-screen bg-slate-950 flex items-center justify-center text-slate-500 animate-pulse">Connecting to CineScore...</div>;
+
+  if (mode === 'host' && gameId) return <HostView gameId={gameId} user={user} />;
+  if (mode === 'player' && gameId) return <PlayerView gameId={gameId} user={user} username={username} />;
+
+  if (mode === 'host' && !gameId) {
+    handleCreateGame();
+    return <div className="h-screen bg-slate-950 flex items-center justify-center text-white">Creating Room...</div>;
+  }
+
+  return <Landing setMode={setMode} joinGame={handleJoinGame} />;
+}
