@@ -21,10 +21,6 @@ import {
 } from 'firebase/firestore';
 import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool } from 'lucide-react';
 
-// --- LOCAL DATA IMPORT PLACEHOLDER ---
-// In your local setup, delete the CATEGORIES object below and uncomment the following line:
-import { CATEGORIES } from './data';
-
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
   // 1. Preview Environment (Internal Use)
@@ -83,7 +79,13 @@ const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCas
 
 // Gemini Answer Verification
 const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
-  if (!apiKey || apiKey === "") return { score: 0, reason: "Error: No API Key." };
+  console.log(`[JUDGE] Starting verification. User guessed: "${userAnswer}", Correct answer: "${correctMovie}"`);
+
+  // STRICT MODE: Fail if no key is present
+  if (!apiKey || apiKey === "") {
+      console.error("[JUDGE] Error: No API Key provided.");
+      return { score: 0, reason: "Error: No API Key provided. Cannot verify." };
+  }
   
   const prompt = `
     I am a trivia game judge.
@@ -91,14 +93,15 @@ const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
     The player guessed: "${userAnswer}".
     
     Rules:
-    1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V"), award 100 points.
-    2. If the guess is the correct franchise but not the specific movie, award 50 points.
+    1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V - The Empire Strikes Back"), award 100 points.
+    2. If the guess is the correct franchise but not the specific movie (e.g. "Star Wars" for "Phantom Menace" or "Harry Potter" for "Goblet of Fire"), award 50 points.
     3. If the guess is wrong, award 0 points.
     
     Return ONLY a raw JSON object: {"score": number, "reason": "short explanation"}
   `;
 
   try {
+    console.log("[JUDGE] Sending request to Gemini API...");
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
       {
@@ -111,13 +114,34 @@ const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
       }
     );
     
-    if (!response.ok) return { score: 0, reason: `API Error ${response.status}` };
+    console.log(`[JUDGE] API Response Status: ${response.status}`);
+
+    if (!response.ok) {
+        console.error(`[JUDGE] API Error Text: ${response.statusText}`);
+        return { score: 0, reason: `API Error ${response.status}: ${response.statusText}` };
+    }
+
     const data = await response.json();
-    const result = JSON.parse(data.candidates[0].content.parts[0].text);
+    // console.log("[JUDGE] API Data received:", data); // verbose
+
+    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!resultText) {
+        console.error("[JUDGE] Invalid response structure from Gemini");
+        return { score: 0, reason: "AI verification failed: Empty response" };
+    }
+
+    const result = JSON.parse(resultText);
+    console.log("[JUDGE] Parsed Result:", result);
+    
+    if (typeof result !== 'object' || typeof result.score !== 'number') {
+        console.error("[JUDGE] Invalid JSON format in result");
+        return { score: 0, reason: "AI verification failed: Invalid response format" };
+    }
+    
     return result;
   } catch (e) {
-    console.error("Gemini Verification Error", e);
-    return { score: 0, reason: "Verification Error" };
+    console.error("[JUDGE] Exception during verification:", e);
+    return { score: 0, reason: `Verification Exception: ${e.message}` };
   }
 };
 
@@ -387,9 +411,23 @@ const HostView = ({ gameId, user }) => {
     if (game?.status === 'playing' && game.skips && players.length > 0) {
       const activePlayerCount = players.length;
       const skipCount = game.skips.length;
-      if ((skipCount / activePlayerCount) > 0.75) giveUp();
+      // SKIP LOGIC: If everyone has either requested skip OR guessed incorrectly (locked out)
+      const lockedOutPlayers = game.attemptedThisRound || [];
+      const playersWhoSkippedOrGuessed = new Set([...game.skips, ...lockedOutPlayers]);
+      
+      if (playersWhoSkippedOrGuessed.size >= activePlayerCount) {
+          giveUp(); // Auto-skip/reveal
+      }
     }
-  }, [game?.skips, players.length, game?.status]);
+  }, [game?.skips, players.length, game?.status, game?.attemptedThisRound]);
+
+  // RESET VERIFICATION STATE WHEN ROUND RESETS (via wrong answer clearing currentAnswer)
+  useEffect(() => {
+    if (!game?.currentAnswer) {
+        setVerification(null);
+        console.log("[HOST] Reset verification state because currentAnswer is empty.");
+    }
+  }, [game?.currentAnswer]);
 
   useEffect(() => {
     if (game?.currentAnswer && !game?.answerVerified && !verification) {
@@ -397,7 +435,8 @@ const HostView = ({ gameId, user }) => {
         setVerification({ status: 'checking' });
         const apiKey = initialGeminiKey; 
         const res = await verifyAnswerWithGemini(game.currentAnswer, game.currentSong.movie, apiKey); 
-        setVerification(res);
+        setVerification(res); // Store result locally to prevent re-runs
+        
         const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
         const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', game.buzzerWinner.uid);
         const scoreToAdd = (typeof res.score === 'number') ? res.score : 0;
@@ -409,11 +448,13 @@ const HostView = ({ gameId, user }) => {
            } else {
                const currentAttempts = game.attemptedThisRound || [];
                const allAttempts = [...currentAttempts, game.buzzerWinner.uid];
+               // Check if EVERYONE has attempted
                const allFailed = allAttempts.length >= players.length;
 
                if (allFailed) {
                    transaction.update(gameRef, { answerVerified: true, lastRoundScore: 0, status: 'revealed', feedbackMessage: "Everyone missed it! The answer is revealed." });
                } else {
+                   // Resets the buzzer for others. This clears currentAnswer, triggering the useEffect above to reset verification state
                    transaction.update(gameRef, { buzzerWinner: null, buzzerLocked: false, currentAnswer: null, answerVerified: false, attemptedThisRound: arrayUnion(game.buzzerWinner.uid), feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!` });
                    setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
                }
@@ -673,7 +714,7 @@ const HostView = ({ gameId, user }) => {
                      <div className="flex flex-col items-center text-yellow-400 animate-bounce-short pt-8">
                         {buzzerPlayer?.avatar ? (
                             <div className="mb-6 bg-slate-800 p-2 rounded-full shadow-2xl">
-                              <img src={buzzerPlayer.avatar} className="w-64 h-64 md:w-96 md:h-96 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
+                              <img src={buzzerPlayer.avatar} className="w-56 h-56 md:w-80 md:h-80 rounded-full border-8 border-yellow-400 bg-slate-900 object-cover" />
                             </div>
                         ) : (
                             <AlertCircle size={80} className="mb-6 md:w-32 md:h-32" />
