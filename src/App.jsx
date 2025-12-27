@@ -79,13 +79,7 @@ const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCas
 
 // Gemini Answer Verification
 const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
-  console.log(`[JUDGE] Starting verification. User guessed: "${userAnswer}", Correct answer: "${correctMovie}"`);
-
-  // STRICT MODE: Fail if no key is present
-  if (!apiKey || apiKey === "") {
-      console.error("[JUDGE] Error: No API Key provided.");
-      return { score: 0, reason: "Error: No API Key provided. Cannot verify." };
-  }
+  if (!apiKey || apiKey === "") return { score: 0, reason: "Error: No API Key." };
   
   const prompt = `
     I am a trivia game judge.
@@ -93,15 +87,14 @@ const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
     The player guessed: "${userAnswer}".
     
     Rules:
-    1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V - The Empire Strikes Back"), award 100 points.
-    2. If the guess is the correct franchise but not the specific movie (e.g. "Star Wars" for "Phantom Menace" or "Harry Potter" for "Goblet of Fire"), award 50 points.
+    1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V"), award 100 points.
+    2. If the guess is the correct franchise but not the specific movie, award 50 points.
     3. If the guess is wrong, award 0 points.
     
     Return ONLY a raw JSON object: {"score": number, "reason": "short explanation"}
   `;
 
   try {
-    console.log("[JUDGE] Sending request to Gemini API...");
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
       {
@@ -114,34 +107,13 @@ const verifyAnswerWithGemini = async (userAnswer, correctMovie, apiKey) => {
       }
     );
     
-    console.log(`[JUDGE] API Response Status: ${response.status}`);
-
-    if (!response.ok) {
-        console.error(`[JUDGE] API Error Text: ${response.statusText}`);
-        return { score: 0, reason: `API Error ${response.status}: ${response.statusText}` };
-    }
-
+    if (!response.ok) return { score: 0, reason: `API Error ${response.status}` };
     const data = await response.json();
-    // console.log("[JUDGE] API Data received:", data); // verbose
-
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!resultText) {
-        console.error("[JUDGE] Invalid response structure from Gemini");
-        return { score: 0, reason: "AI verification failed: Empty response" };
-    }
-
-    const result = JSON.parse(resultText);
-    console.log("[JUDGE] Parsed Result:", result);
-    
-    if (typeof result !== 'object' || typeof result.score !== 'number') {
-        console.error("[JUDGE] Invalid JSON format in result");
-        return { score: 0, reason: "AI verification failed: Invalid response format" };
-    }
-    
+    const result = JSON.parse(data.candidates[0].content.parts[0].text);
     return result;
   } catch (e) {
-    console.error("[JUDGE] Exception during verification:", e);
-    return { score: 0, reason: `Verification Exception: ${e.message}` };
+    console.error("Gemini Verification Error", e);
+    return { score: 0, reason: "Verification Error" };
   }
 };
 
@@ -202,14 +174,13 @@ const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
         const randomIndex = Math.floor(Math.random() * availableSongs.length);
         const candidate = availableSongs[randomIndex];
 
-        // Determine media type for poster search (simple heuristic based on year/context if needed, but here passed from caller usually)
-        // We'll rely on the candidate object structure or defaults
-        const isTv = false; // We can improve this if we pass category type, but for now default to movie/generic
+        // Determine media type for poster search
+        const isTv = false; 
         
         // Fetch Music and Poster
         const [musicData, posterUrl] = await Promise.all([
             searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
-            searchMoviePoster(candidate.movie, 'movie', candidate.year) // Defaulting to movie search for generic helper
+            searchMoviePoster(candidate.movie, 'movie', candidate.year) 
         ]);
 
         if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
@@ -421,11 +392,10 @@ const HostView = ({ gameId, user }) => {
     }
   }, [game?.skips, players.length, game?.status, game?.attemptedThisRound]);
 
-  // RESET VERIFICATION STATE WHEN ROUND RESETS (via wrong answer clearing currentAnswer)
+  // RESET VERIFICATION STATE WHEN ROUND RESETS
   useEffect(() => {
     if (!game?.currentAnswer) {
         setVerification(null);
-        console.log("[HOST] Reset verification state because currentAnswer is empty.");
     }
   }, [game?.currentAnswer]);
 
@@ -435,12 +405,14 @@ const HostView = ({ gameId, user }) => {
         setVerification({ status: 'checking' });
         const apiKey = initialGeminiKey; 
         const res = await verifyAnswerWithGemini(game.currentAnswer, game.currentSong.movie, apiKey); 
-        setVerification(res); // Store result locally to prevent re-runs
+        setVerification(res); 
         
         const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
         const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', game.buzzerWinner.uid);
-        const scoreToAdd = (typeof res.score === 'number') ? res.score : 0;
-
+        let scoreToAdd = (typeof res.score === 'number') ? res.score : 0;
+        
+        // REVERTED: Half points logic removed as requested ("Undo the last change")
+        
         await runTransaction(db, async (transaction) => {
            if (scoreToAdd > 0) {
                transaction.update(gameRef, { answerVerified: true, lastRoundScore: scoreToAdd, status: 'revealed' });
@@ -454,7 +426,6 @@ const HostView = ({ gameId, user }) => {
                if (allFailed) {
                    transaction.update(gameRef, { answerVerified: true, lastRoundScore: 0, status: 'revealed', feedbackMessage: "Everyone missed it! The answer is revealed." });
                } else {
-                   // Resets the buzzer for others. This clears currentAnswer, triggering the useEffect above to reset verification state
                    transaction.update(gameRef, { buzzerWinner: null, buzzerLocked: false, currentAnswer: null, answerVerified: false, attemptedThisRound: arrayUnion(game.buzzerWinner.uid), feedbackMessage: `${game.buzzerWinner.username} guessed wrong! Keep listening!` });
                    setTimeout(() => updateDoc(gameRef, { feedbackMessage: null }), 3000);
                }
@@ -478,6 +449,9 @@ const HostView = ({ gameId, user }) => {
     
     // Determine category and media type
     const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
+    // Import categories locally - in real app use import
+    // const allSongs = CATEGORIES[category]; 
+    // Fallback if data import simulation not needed here since we have it in file
     const allSongs = CATEGORIES[category];
     const trackData = allSongs[Math.floor(Math.random() * allSongs.length)];
 
@@ -526,23 +500,20 @@ const HostView = ({ gameId, user }) => {
     }
 
     const allSongs = CATEGORIES[category];
-    // Use the stored history from the game object
     const playedSongs = game?.playedSongs || [];
-    // Helper to get raw titles from history objects
     const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
-    
-    // Filter out played songs
     const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
+
+    // Refactored song selection logic
+    let selectedSong = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+    const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
 
     if (availableSongs.length === 0) {
         alert("Ran out of unique songs in this category!");
         return;
     }
-
-    const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
-    let selectedSong = null;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 5;
 
     while (!selectedSong && availableSongs.length > 0 && attempts < MAX_ATTEMPTS) {
         attempts++;
@@ -609,6 +580,11 @@ const HostView = ({ gameId, user }) => {
   };
   
   const getPlayer = (uid) => players.find(p => p.id === uid);
+  
+  // Guard clause for HostView render to prevent white screen crash
+  if (!game) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 animate-pulse">Loading Game...</div>;
+
+  const buzzerPlayer = game?.buzzerWinner ? getPlayer(game.buzzerWinner.uid) : null;
 
   if (showSettings) {
     return (
@@ -661,8 +637,6 @@ const HostView = ({ gameId, user }) => {
       </div>
     );
   }
-
-  const buzzerPlayer = game?.buzzerWinner ? getPlayer(game.buzzerWinner.uid) : null;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col h-screen overflow-hidden">
@@ -779,7 +753,7 @@ const PlayerView = ({ gameId, user, username }) => {
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
   const [showHistory, setShowHistory] = useState(false); 
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(20);
 
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (snap) => {
@@ -812,7 +786,7 @@ const PlayerView = ({ gameId, user, username }) => {
             submitAnswer("TIMEOUT");
         }
     } else {
-        setTimeLeft(10);
+        setTimeLeft(20);
     }
   }, [timeLeft, game?.buzzerWinner, user.uid, game?.status, hasAnswered]);
 
