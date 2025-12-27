@@ -20,6 +20,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool } from 'lucide-react';
+import { CATEGORIES } from './data';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
