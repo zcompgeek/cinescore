@@ -20,7 +20,7 @@ import {
   writeBatch,
   serverTimestamp
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, PenTool, MessageCircle, Hourglass } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -35,6 +35,7 @@ const getEnvironmentConfig = () => {
   }
 
   // 2. Vite / Firebase App Hosting
+  // UNCOMMENT THE LINES BELOW FOR GITHUB/VITE DEPLOYMENT
   try {
     if (import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
       return {
@@ -52,8 +53,9 @@ const getEnvironmentConfig = () => {
       };
     }
   } catch (e) {}
+  
 
-  // 3. Manual Fallback
+  // 3. Manual Fallback (For simple copy-paste deployment)
   return {
     firebaseConfig: {
       apiKey: "REPLACE_WITH_YOUR_API_KEY",
@@ -88,9 +90,10 @@ const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCas
 const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
   if (!apiKey || apiKey === "") {
       console.error("[JUDGE] Error: No API Key provided.");
-      return submissionsList.map(s => ({ uid: s.uid, score: 0 })); 
+      return submissionsList.map(s => ({ uid: s.uid, score: 0 })); // Fail safe
   }
   
+  // Prepare the guesses for the prompt
   const guessesString = submissionsList.map(s => `ID: ${s.uid}, Guess: "${s.answer}"`).join("\n");
 
   const prompt = `
@@ -105,8 +108,8 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
     2. If the guess is the correct franchise but not the specific movie, award 50 points.
     3. If the guess is wrong, award 0 points.
     
-    Return ONLY a raw JSON array of objects with 'uid' and 'score'. Example:
-    [{"uid": "user1", "score": 100}, {"uid": "user2", "score": 0}]
+    Return ONLY a raw JSON array of objects with 'uid' and 'score':
+    [{"uid": "...", "score": ...}, ...]
   `;
 
   try {
@@ -126,13 +129,12 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
 
     const data = await response.json();
     let resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!resultText) throw new Error("Empty response from AI");
-    
-    // Cleanup markdown
+    // Strip markdown code blocks if present
     resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
     
     const result = JSON.parse(resultText);
-    if (!Array.isArray(result)) throw new Error("Invalid response format: expected array");
+    
+    if (!Array.isArray(result)) throw new Error("Invalid response format");
     
     return result;
   } catch (e) {
@@ -140,9 +142,9 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
     // Fallback: simple exact match
     const normalizedCorrect = correctMovie.toLowerCase();
     return submissionsList.map(s => {
-        const normalizedGuess = (s.answer || "").toLowerCase();
+        const normalizedGuess = s.answer.toLowerCase();
         let score = 0;
-        if (normalizedGuess.includes(normalizedCorrect) || normalizedCorrect.includes(normalizedGuess)) score = 100;
+        if (normalizedCorrect.includes(normalizedGuess) || normalizedGuess.includes(normalizedCorrect)) score = 100;
         return { uid: s.uid, score };
     });
   }
@@ -204,24 +206,23 @@ const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
         const randomIndex = Math.floor(Math.random() * availableSongs.length);
         const candidate = availableSongs[randomIndex];
 
-        // Fetch Music and Poster
-        const [musicData, posterUrl] = await Promise.all([
-            searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
-            searchMoviePoster(candidate.movie, 'movie', candidate.year) 
-        ]);
-
-        if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
-            selectedSong = {
-                ...candidate,
-                previewUrl: musicData.previewUrl,
-                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
-            };
-        } else {
-            // Remove bad candidate and try again
-            availableSongs.splice(randomIndex, 1);
-        }
+        // Determine media type for poster search
+        // We assume 'tv' only for the two specific TV categories, passed as logic outside or inferred
+        // Since this helper is generic, let's pass a hint or just default. 
+        // Better: We'll modify calling logic to pass the type, or just guess. 
+        // Actually, we can just default to 'movie' inside searchMoviePoster if not specified, 
+        // but to be precise, let's pass the type if we can.
+        // For simplicity in this helper, we'll try movie first. 
+        // NOTE: In the main component, we have better logic. This helper is for robust retries.
+        
+        // Let's improve the helper to accept type
+        // ... (refactored below in main component logic instead of helper for now to keep state simple)
+        
+        // To keep this helper pure and simple, I will inline this logic back into the main component 
+        // to avoid prop drilling issues with state variables like 'category'.
+        return candidate; 
     }
-    return selectedSong;
+    return null;
 };
 
 
@@ -247,7 +248,9 @@ const DrawingPad = ({ onSave }) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
+
     let clientX, clientY;
+    
     if (event.touches) {
       clientX = event.touches[0].clientX;
       clientY = event.touches[0].clientY;
@@ -255,11 +258,15 @@ const DrawingPad = ({ onSave }) => {
       clientX = event.clientX;
       clientY = event.clientY;
     }
-    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
   };
 
   const startDrawing = (e) => {
-    e.preventDefault(); 
+    e.preventDefault(); // Prevent scrolling on touch
     const { x, y } = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
     ctx.beginPath();
@@ -279,7 +286,8 @@ const DrawingPad = ({ onSave }) => {
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
-      onSave(canvasRef.current.toDataURL());
+      const canvas = canvasRef.current;
+      onSave(canvas.toDataURL());
     }
   };
 
@@ -305,9 +313,14 @@ const DrawingPad = ({ onSave }) => {
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
         />
-        <button onClick={(e) => { e.preventDefault(); clearCanvas(); }} className="absolute top-2 right-2 p-2 bg-red-600/80 rounded text-white"><X size={16}/></button>
+        <button 
+           onClick={(e) => { e.preventDefault(); clearCanvas(); }}
+           className="absolute top-2 right-2 p-2 bg-red-600/80 rounded hover:bg-red-500 text-white"
+        >
+          <X size={16} />
+        </button>
       </div>
-      <p className="text-xs text-slate-400 flex items-center gap-1"><PenTool size={12}/> Draw your icon!</p>
+      <p className="text-xs text-slate-400 flex items-center gap-1">Draw your icon!</p>
     </div>
   );
 };
@@ -319,7 +332,7 @@ const Landing = ({ setMode, joinGame }) => {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(null);
-  const [step, setStep] = useState(1); 
+  const [step, setStep] = useState(1); // 1: Info, 2: Drawing
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -334,21 +347,49 @@ const Landing = ({ setMode, joinGame }) => {
             <Music size={48} className="text-white" />
           </div>
         </div>
-        <h1 className="text-5xl font-black mb-2 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">CineScore</h1>
+        <h1 className="text-5xl font-black mb-2 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          CineScore
+        </h1>
         <p className="text-slate-400 mb-8 text-lg">The Ultimate Soundtrack Trivia</p>
 
         <div className="space-y-4 max-w-lg mx-auto w-full">
           {step === 1 ? (
              <>
-               <button onClick={() => setMode('host')} className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg">Host a New Game</button>
+               <button 
+                 onClick={() => setMode('host')}
+                 className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
+               >
+                 Host a New Game
+               </button>
+               
                <div className="relative my-6">
                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-700"></span></div>
                  <div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900 text-slate-500">OR JOIN EXISTING</span></div>
                </div>
+
                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-3 w-full">
-                 <input type="text" placeholder="YOUR NAME" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600" value={name} onChange={e => setName(e.target.value)}/>
-                 <input type="text" placeholder="GAME CODE (e.g. ABCD)" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none uppercase placeholder:text-slate-600" maxLength={4} value={code} onChange={e => setCode(e.target.value.toUpperCase())}/>
-                 <button disabled={!name || code.length !== 4} onClick={() => setStep(2)} className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-2">Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" /></button>
+                 <input 
+                   type="text" 
+                   placeholder="YOUR NAME"
+                   className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600"
+                   value={name}
+                   onChange={e => setName(e.target.value)}
+                 />
+                 <input 
+                   type="text" 
+                   placeholder="GAME CODE (e.g. ABCD)"
+                   className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none uppercase placeholder:text-slate-600"
+                   maxLength={4}
+                   value={code}
+                   onChange={e => setCode(e.target.value.toUpperCase())}
+                 />
+                 <button 
+                   disabled={!name || code.length !== 4}
+                   onClick={() => setStep(2)}
+                   className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-2"
+                 >
+                   Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" />
+                 </button>
                </div>
              </>
           ) : (
@@ -356,8 +397,18 @@ const Landing = ({ setMode, joinGame }) => {
                  <h2 className="text-xl font-bold text-white">Draw Your Icon</h2>
                  <DrawingPad onSave={setAvatar} />
                  <div className="flex gap-2">
-                     <button onClick={() => setStep(1)} className="flex-1 py-3 bg-slate-700 text-white rounded-lg font-bold hover:bg-slate-600 transition-colors">Back</button>
-                     <button onClick={() => joinGame(code, name, avatar)} className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-colors">Join Game</button>
+                     <button 
+                        onClick={() => setStep(1)}
+                        className="flex-1 py-3 bg-slate-700 text-white rounded-lg font-bold hover:bg-slate-600 transition-colors"
+                     >
+                        Back
+                     </button>
+                     <button 
+                        onClick={() => joinGame(code, name, avatar)}
+                        className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-colors"
+                     >
+                        Join Game
+                     </button>
                  </div>
              </div>
           )}
@@ -401,6 +452,15 @@ const HostView = ({ gameId, user }) => {
           setRoundTimeLeft(60); // Reset for next round
       }
   }, [roundTimeLeft, game?.status]);
+  
+  // Hint Reveal at 30 seconds
+  useEffect(() => {
+      if (game?.status === 'playing' && roundTimeLeft === 30 && !game.hintRevealed) {
+          updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+              hintRevealed: true
+          });
+      }
+  }, [roundTimeLeft, game?.status, game?.hintRevealed]);
 
   // Audio Player Effect - CONTINUOUS PLAY
   useEffect(() => {
@@ -452,6 +512,7 @@ const HostView = ({ gameId, user }) => {
             const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
             const buzzes = game.buzzes || [];
             const batch = writeBatch(db);
+            const roundStartTime = game.roundStart || 0;
             
             // Assign points with penalty logic
             let correctCountBefore = 0;
@@ -467,9 +528,15 @@ const HostView = ({ gameId, user }) => {
                 const isCorrect = score > 0;
 
                 if (isCorrect) {
-                    // This player was correct. 
-                    // Calculate their score: Base (from Gemini) - (10 * correctCountBefore)
-                    const finalScore = Math.max(10, score - (correctCountBefore * 10)); // Min 10 points
+                    let baseScore = score;
+                    
+                    // Time penalty: if answered after 30s (when hint revealed), reduce by 30%
+                    if (buzz.timestamp - roundStartTime > 30000) {
+                         baseScore = Math.floor(baseScore * 0.7);
+                    }
+                    
+                    // Buzz order penalty: Subtract 10 pts for each person before
+                    const finalScore = Math.max(10, baseScore - (correctCountBefore * 10)); // Min 10 points
                     
                     const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', buzz.uid);
                     batch.update(playerRef, { score: increment(finalScore) });
@@ -496,11 +563,6 @@ const HostView = ({ gameId, user }) => {
             await batch.commit();
         };
         // Ensure we only run this once by checking status is still 'playing' inside effect trigger
-        // The effect dependency on roundTimeLeft=0 or allDone=true triggers this.
-        // We add a small flag or check to ensure we don't spam.
-        // For simplicity, we rely on the state transition to 'revealed' to stop re-execution, 
-        // but we need to prevent double-fire in React 18 strict mode or race conditions.
-        // Since we check game.status !== 'playing' at start, once we commit the batch update to 'revealed', this effect won't run.
         finalizeRound();
     }
 
@@ -560,7 +622,9 @@ const HostView = ({ gameId, user }) => {
       submissions: {}, 
       currentSong: { ...trackData, previewUrl, coverArt },
       feedbackMessage: null,
-      roundResults: []
+      roundResults: [],
+      roundStart: Date.now(),
+      hintRevealed: false
     });
     
     await batch.commit();
@@ -580,8 +644,6 @@ const HostView = ({ gameId, user }) => {
     }
 
     const allSongs = CATEGORIES[category];
-    if (!allSongs) return;
-
     const playedSongs = game?.playedSongs || [];
     const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
     const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
@@ -636,7 +698,9 @@ const HostView = ({ gameId, user }) => {
       buzzes: [],
       submissions: {},
       feedbackMessage: null,
-      roundResults: []
+      roundResults: [],
+      roundStart: Date.now(),
+      hintRevealed: false
     });
   };
 
@@ -756,6 +820,12 @@ const HostView = ({ gameId, user }) => {
                    {/* SHOW LIVE BUZZES */}
                    {game?.status === 'playing' && buzzes.length > 0 && (
                        <div className="flex flex-col items-center gap-4 mb-8">
+                           {game.hintRevealed && (
+                               <div className="bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 mb-4 animate-bounce-short flex items-center gap-2">
+                                   <span className="text-2xl">💡</span>
+                                   <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+                               </div>
+                           )}
                            <h3 className="text-2xl font-bold animate-pulse text-yellow-400">Guessing...</h3>
                            <div className="flex flex-wrap justify-center gap-3">
                                {buzzes.map((b, i) => {
@@ -796,6 +866,12 @@ const HostView = ({ gameId, user }) => {
                    {/* PLAYING STATE */}
                    {game?.status === 'playing' && buzzes.length === 0 && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
+                        {game.hintRevealed && (
+                           <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
+                               <span className="text-2xl">💡</span>
+                               <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+                           </div>
+                        )}
                         <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
                         <div className="mt-4 flex gap-2">
@@ -872,6 +948,7 @@ const PlayerView = ({ gameId, user, username }) => {
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
   const [showHistory, setShowHistory] = useState(false); 
+  const [timeLeft, setTimeLeft] = useState(10);
   const [buzzerTime, setBuzzerTime] = useState(null);
 
   useEffect(() => {
@@ -1050,6 +1127,12 @@ const PlayerView = ({ gameId, user, username }) => {
     if (!hasSubmitted) {
         return (
           <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
+            {game.hintRevealed && (
+                 <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
+                     <span className="text-2xl">💡</span>
+                     <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+                 </div>
+            )}
             <h1 className="text-3xl md:text-4xl font-black text-white mb-2 animate-bounce">YOU'RE UP!</h1>
             <div className="text-slate-300 mb-6 text-sm">You have until the round ends...</div>
             <div className="w-full max-w-4xl space-y-4">
@@ -1078,6 +1161,11 @@ const PlayerView = ({ gameId, user, username }) => {
             </div>
         );
     }
+  }
+  
+  // Show hint to everyone else too if revealed
+  if (game.status === 'playing' && game.hintRevealed && !hasBuzzed) {
+       // This block renders inside the main return below, just conditionally showing the hint
   }
 
   if (game.status === 'revealed') {
@@ -1136,6 +1224,13 @@ const PlayerView = ({ gameId, user, username }) => {
        )}
        
        <div className="flex-1 flex flex-col items-center justify-center relative p-4 w-full max-w-full">
+          {game.status === 'playing' && game.hintRevealed && !hasBuzzed && (
+             <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2 absolute top-4 z-10">
+                 <span className="text-2xl">💡</span>
+                 <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+             </div>
+          )}
+
           <button onClick={buzzIn} className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group">
              <span className="text-5xl md:text-7xl font-black text-red-100 group-hover:text-white transition-colors">BUZZ</span>
           </button>
