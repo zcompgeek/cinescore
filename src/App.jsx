@@ -20,7 +20,7 @@ import {
   writeBatch,
   serverTimestamp
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -36,6 +36,7 @@ const getEnvironmentConfig = () => {
 
   // 2. Vite / Firebase App Hosting
   // UNCOMMENT THE LINES BELOW FOR GITHUB/VITE DEPLOYMENT
+  
   try {
     if (import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
       return {
@@ -90,7 +91,7 @@ const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCas
 const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
   if (!apiKey || apiKey === "") {
       console.error("[JUDGE] Error: No API Key provided.");
-      return submissionsList.map(s => ({ uid: s.uid, score: 0 })); // Fail safe
+      return submissionsList.map(s => ({ uid: s.uid, score: 0 })); 
   }
   
   // Prepare the guesses for the prompt
@@ -191,7 +192,6 @@ const searchMoviePoster = async (query, type = 'movie', year = null) => {
 
 // --- HELPER: PICK RANDOM SONG ---
 const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
-    // Normalize played songs to just titles for comparison
     const usedTitles = playedSongsHistory.map(s => (typeof s === 'string' ? s : s.title));
     let availableSongs = categoryList.filter(s => !usedTitles.includes(s.title));
 
@@ -206,23 +206,23 @@ const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
         const randomIndex = Math.floor(Math.random() * availableSongs.length);
         const candidate = availableSongs[randomIndex];
 
-        // Determine media type for poster search
-        // We assume 'tv' only for the two specific TV categories, passed as logic outside or inferred
-        // Since this helper is generic, let's pass a hint or just default. 
-        // Better: We'll modify calling logic to pass the type, or just guess. 
-        // Actually, we can just default to 'movie' inside searchMoviePoster if not specified, 
-        // but to be precise, let's pass the type if we can.
-        // For simplicity in this helper, we'll try movie first. 
-        // NOTE: In the main component, we have better logic. This helper is for robust retries.
-        
-        // Let's improve the helper to accept type
-        // ... (refactored below in main component logic instead of helper for now to keep state simple)
-        
-        // To keep this helper pure and simple, I will inline this logic back into the main component 
-        // to avoid prop drilling issues with state variables like 'category'.
-        return candidate; 
+        // Fetch Music and Poster
+        const [musicData, posterUrl] = await Promise.all([
+            searchItunes(`${candidate.title} ${candidate.artist} soundtrack`),
+            searchMoviePoster(candidate.movie, 'movie', candidate.year) 
+        ]);
+
+        if (musicData?.previewUrl && (posterUrl || musicData?.artworkUrl100)) {
+            selectedSong = {
+                ...candidate,
+                previewUrl: musicData.previewUrl,
+                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
+            };
+        } else {
+            availableSongs.splice(randomIndex, 1);
+        }
     }
-    return null;
+    return selectedSong;
 };
 
 
@@ -266,7 +266,7 @@ const DrawingPad = ({ onSave }) => {
   };
 
   const startDrawing = (e) => {
-    e.preventDefault(); // Prevent scrolling on touch
+    e.preventDefault(); 
     const { x, y } = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
     ctx.beginPath();
@@ -990,7 +990,25 @@ const PlayerView = ({ gameId, user, username }) => {
   }, [gameId, hasAnswered, user.uid, buzzerTime]); // Added buzzerTime dependency
 
   const hasBuzzed = game?.buzzes?.some(b => b.uid === user.uid);
-  const hasSubmitted = game?.submissions?.[user.uid];
+  // Check local state first to prevent UI flicker, then confirm with DB
+  const dbSubmission = game?.submissions?.[user.uid];
+  const isWaiting = hasAnswered || !!dbSubmission;
+
+  // Timer Effect
+  useEffect(() => {
+    if (hasBuzzed && game?.status === 'playing' && !isWaiting) {
+        if (timeLeft > 0) {
+            const timerId = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+            return () => clearTimeout(timerId);
+        } else {
+            // Time up!
+            submitAnswer("TIMEOUT");
+        }
+    } else {
+        // Reset timer if round resets or status changes
+        if (!hasBuzzed) setTimeLeft(10);
+    }
+  }, [timeLeft, hasBuzzed, game?.status, isWaiting]);
 
   const buzzIn = async () => {
     if (!game || hasBuzzed || game.status !== 'playing') return;
@@ -1122,9 +1140,11 @@ const PlayerView = ({ gameId, user, username }) => {
        }
   }
 
+  // 2. Locked Out (Guessed Wrong already) - N/A in current flow but kept for structure
+
   // 3. I Buzzed! Input time.
   if (hasBuzzed && game.status !== 'revealed') {
-    if (!hasSubmitted) {
+    if (!isWaiting) {
         return (
           <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
             {game.hintRevealed && (
@@ -1134,7 +1154,7 @@ const PlayerView = ({ gameId, user, username }) => {
                  </div>
             )}
             <h1 className="text-3xl md:text-4xl font-black text-white mb-2 animate-bounce">YOU'RE UP!</h1>
-            <div className="text-slate-300 mb-6 text-sm">You have until the round ends...</div>
+            <div className="text-6xl font-mono font-bold text-yellow-400 mb-6">{timeLeft}</div>
             <div className="w-full max-w-4xl space-y-4">
                <input 
                  autoFocus
@@ -1154,7 +1174,7 @@ const PlayerView = ({ gameId, user, username }) => {
         return (
             <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
                 <div className="animate-pulse flex flex-col items-center">
-                    <MessageCircle size={48} className="mb-4" />
+                    <Check size={48} className="mb-4 text-green-400" />
                     <h2 className="text-2xl font-bold">Answer Submitted</h2>
                     <p className="text-slate-400">Waiting for round to end...</p>
                 </div>
