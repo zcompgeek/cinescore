@@ -425,8 +425,7 @@ const HostView = ({ gameId, user }) => {
   const [category, setCategory] = useState("all_stars");
   const [totalRounds, setTotalRounds] = useState(10);
   const [showSettings, setShowSettings] = useState(true);
-  const [showHistory, setShowHistory] = useState(false);
-  const [roundTimeLeft, setRoundTimeLeft] = useState(60);
+  const [roundTimeLeft, setRoundTimeLeft] = useState(30);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -449,13 +448,13 @@ const HostView = ({ gameId, user }) => {
               return () => clearTimeout(timer);
           }
       } else {
-          setRoundTimeLeft(60); // Reset for next round
+          setRoundTimeLeft(30); // Reset to 30s
       }
   }, [roundTimeLeft, game?.status]);
   
-  // Hint Reveal at 30 seconds
+  // Hint Reveal at 10 seconds elapsed (20s remaining)
   useEffect(() => {
-      if (game?.status === 'playing' && roundTimeLeft === 30 && !game.hintRevealed) {
+      if (game?.status === 'playing' && roundTimeLeft === 20 && !game.hintRevealed) {
           updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
               hintRevealed: true
           });
@@ -493,7 +492,18 @@ const HostView = ({ gameId, user }) => {
     const allDone = activePlayerCount > 0 && donePlayers.size >= activePlayerCount;
     const timeUp = roundTimeLeft === 0;
 
-    if (allDone || timeUp) {
+    // --- NEW LOGIC: Check for 3 "Correct" Answers (Soft Check) ---
+    // This ends the round early if 3 people likely got it right
+    const correctAnswers = [game.currentSong?.movie, game.currentSong?.title].filter(Boolean).map(s => s.toLowerCase());
+    const potentialCorrectCount = Object.values(submissions).filter(s => {
+        if (!s.answer) return false;
+        const ans = s.answer.toLowerCase();
+        return correctAnswers.some(ca => ans.includes(ca) || ca.includes(ans));
+    }).length;
+
+    const hitLimit = potentialCorrectCount >= 3;
+
+    if (allDone || timeUp || hitLimit) {
         // ROUND COMPLETE - VERIFY BATCH AND SCORE
         const finalizeRound = async () => {
             const apiKey = initialGeminiKey;
@@ -501,7 +511,8 @@ const HostView = ({ gameId, user }) => {
             // Prepare unverified submissions
             const submissionsList = Object.keys(submissions).map(uid => ({
                 uid,
-                answer: submissions[uid].answer
+                answer: submissions[uid].answer,
+                timestamp: submissions[uid].timestamp // Important for tie-breaking
             }));
             
             let results = [];
@@ -510,45 +521,46 @@ const HostView = ({ gameId, user }) => {
             }
 
             const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-            const buzzes = game.buzzes || [];
             const batch = writeBatch(db);
-            const roundStartTime = game.roundStart || 0;
             
-            // Assign points with penalty logic
-            let correctCountBefore = 0;
+            // --- NEW SCORING LOGIC: ONLY TOP 3 GET POINTS ---
+            // 1. Identify Correct Submissions
+            const correctSubmissions = results.filter(r => r.score > 0).map(r => {
+                const sub = submissions[r.uid];
+                return { ...r, timestamp: sub?.timestamp || Date.now() };
+            });
+
+            // 2. Sort by Timestamp (Fastest Fingers)
+            correctSubmissions.sort((a,b) => a.timestamp - b.timestamp);
+
+            // 3. Take Top 3
+            const winnerUids = correctSubmissions.slice(0, 3).map(c => c.uid);
+
             let roundWinnerCount = 0;
-            
-            // Sort buzzes by timestamp just in case
-            const sortedBuzzes = [...buzzes].sort((a,b) => a.timestamp - b.timestamp);
 
-            for (const buzz of sortedBuzzes) {
-                // Find verification result
-                const res = results.find(r => r.uid === buzz.uid);
-                const score = res ? res.score : 0;
-                const isCorrect = score > 0;
+            // Apply Scores
+            for (const res of results) {
+                const uid = res.uid;
+                const isCorrect = res.score > 0;
+                const isWinner = winnerUids.includes(uid);
+                
+                let finalScore = 0;
 
-                if (isCorrect) {
-                    let baseScore = score;
-                    
-                    // Time penalty: if answered after 30s (when hint revealed), reduce by 30%
-                    if (buzz.timestamp - roundStartTime > 30000) {
-                         baseScore = Math.floor(baseScore * 0.7);
-                    }
-                    
-                    // Buzz order penalty: Subtract 10 pts for each person before
-                    const finalScore = Math.max(10, baseScore - (correctCountBefore * 10)); // Min 10 points
-                    
-                    const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', buzz.uid);
-                    batch.update(playerRef, { score: increment(finalScore) });
-                    
-                    // Increment penalty counter for NEXT correct person
-                    correctCountBefore++;
+                if (isCorrect && isWinner) {
+                    finalScore = res.score; // Full points (100 or 50)
                     roundWinnerCount++;
-                    
-                    // Inject actual awarded score back into result for UI display
                     res.actualScore = finalScore;
+                    res.outcome = "won";
+                    
+                    const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', uid);
+                    batch.update(playerRef, { score: increment(finalScore) });
+                } else if (isCorrect && !isWinner) {
+                    // Correct but too slow
+                    res.actualScore = 0;
+                    res.outcome = "too_slow";
                 } else {
-                    if (res) res.actualScore = 0;
+                    res.actualScore = 0;
+                    res.outcome = "wrong";
                 }
             }
             
@@ -562,7 +574,6 @@ const HostView = ({ gameId, user }) => {
             
             await batch.commit();
         };
-        // Ensure we only run this once by checking status is still 'playing' inside effect trigger
         finalizeRound();
     }
 
@@ -582,19 +593,14 @@ const HostView = ({ gameId, user }) => {
   const startGame = async () => {
     setShowSettings(false);
     
-    // Determine category and media type
     const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
-    // const allSongs = CATEGORIES[category]; // In local, use import
     const allSongs = CATEGORIES[category]; 
     if (!allSongs || Object.keys(allSongs).length === 0) {
-        // Fallback for empty/missing data in preview
          console.warn("CATEGORY DATA MISSING. Using placeholder.");
          return; 
     }
     
     const trackList = allSongs;
-    if (!trackList || trackList.length === 0) { alert("Empty Category"); return; }
-    
     const trackData = trackList[Math.floor(Math.random() * trackList.length)];
 
     // Fetch First Song
@@ -720,15 +726,11 @@ const HostView = ({ gameId, user }) => {
           submissions: {}
       });
       setShowSettings(true);
-      setShowHistory(false);
   };
   
   const getPlayer = (uid) => players.find(p => p.id === uid);
   
-  // Guard clause for HostView render to prevent white screen crash
   if (!game) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 animate-pulse">Loading Game...</div>;
-
-  const buzzerPlayer = game?.buzzerWinner ? getPlayer(game.buzzerWinner.uid) : null;
 
   if (showSettings) {
     return (
@@ -823,7 +825,7 @@ const HostView = ({ gameId, user }) => {
                            {game.hintRevealed && (
                                <div className="bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 mb-4 animate-bounce-short flex items-center gap-2">
                                    <span className="text-2xl">💡</span>
-                                   <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+                                   <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
                                </div>
                            )}
                            <h3 className="text-2xl font-bold animate-pulse text-yellow-400">Guessing...</h3>
@@ -869,7 +871,7 @@ const HostView = ({ gameId, user }) => {
                         {game.hintRevealed && (
                            <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
                                <span className="text-2xl">💡</span>
-                               <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+                               <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
                            </div>
                         )}
                         <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
@@ -879,6 +881,7 @@ const HostView = ({ gameId, user }) => {
                                  <span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>
                              )}
                         </div>
+                        <div className="mt-4 text-xs text-slate-500">Only top 3 fastest answers get points!</div>
                      </div>
                    )}
 
@@ -886,13 +889,13 @@ const HostView = ({ gameId, user }) => {
                      <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm w-full max-w-5xl">
                         <div className="mb-6 flex flex-col items-center">
                            <img 
-                             src={game.currentSong.coverArt} 
+                             src={game.currentSong?.coverArt} 
                              className="max-h-[40vh] w-auto max-w-full object-contain rounded-lg shadow-2xl mb-6" 
                              alt="Movie Poster"
                            />
-                           <h2 className="text-3xl md:text-5xl font-black text-white text-center leading-tight mb-2">{game.currentSong.movie}</h2>
-                           <p className="text-blue-400 text-xl md:text-2xl font-bold">{game.currentSong.title}</p>
-                           <p className="text-slate-500 text-lg">{game.currentSong.artist}</p>
+                           <h2 className="text-3xl md:text-5xl font-black text-white text-center leading-tight mb-2">{game.currentSong?.movie}</h2>
+                           <p className="text-blue-400 text-xl md:text-2xl font-bold">{game.currentSong?.title}</p>
+                           <p className="text-slate-500 text-lg">{game.currentSong?.artist}</p>
                         </div>
                         
                         <div className="text-center mb-6">
@@ -911,7 +914,7 @@ const HostView = ({ gameId, user }) => {
              </div>
           </div>
 
-          {/* Leaderboard Sidebar - Scrollable at bottom on mobile, side on desktop */}
+          {/* Leaderboard Sidebar */}
           <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 p-4 md:p-6 flex flex-col h-48 md:h-auto shrink-0">
              <h3 className="text-lg md:text-xl font-bold text-white mb-2 md:mb-6 flex items-center gap-2 sticky top-0 bg-slate-900 z-10">
                <Trophy className="text-yellow-500" size={20} /> Leaderboard
@@ -1140,8 +1143,6 @@ const PlayerView = ({ gameId, user, username }) => {
        }
   }
 
-  // 2. Locked Out (Guessed Wrong already) - N/A in current flow but kept for structure
-
   // 3. I Buzzed! Input time.
   if (hasBuzzed && game.status !== 'revealed') {
     if (!isWaiting) {
@@ -1150,7 +1151,7 @@ const PlayerView = ({ gameId, user, username }) => {
             {game.hintRevealed && (
                  <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
                      <span className="text-2xl">💡</span>
-                     <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+                     <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
                  </div>
             )}
             <h1 className="text-3xl md:text-4xl font-black text-white mb-2 animate-bounce">YOU'RE UP!</h1>
@@ -1183,31 +1184,35 @@ const PlayerView = ({ gameId, user, username }) => {
     }
   }
   
-  // Show hint to everyone else too if revealed
-  if (game.status === 'playing' && game.hintRevealed && !hasBuzzed) {
-       // This block renders inside the main return below, just conditionally showing the hint
-  }
-
   if (game.status === 'revealed') {
     const myResult = game.roundResults?.find(r => r.uid === user.uid);
-    const score = myResult ? myResult.score : 0;
+    const score = myResult?.actualScore || 0; // Use actualScore for display
+    const outcome = myResult?.outcome;
     const isCorrect = score > 0;
     
-    // Calculate if we got penalized (base score > awarded score)
-    // The client doesn't have the base score easily, so we just show what we got
+    let msg = "WRONG!";
+    let color = "text-red-400";
+    
+    if (isCorrect) {
+        msg = `CORRECT! (+${score})`;
+        color = "text-green-400";
+    } else if (outcome === 'too_slow') {
+        msg = "CORRECT (Too Slow!)";
+        color = "text-yellow-400";
+    }
     
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
          <div className="mb-6 relative w-full flex justify-center">
-            <img src={game.currentSong.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="max-h-[50vh] w-auto max-w-full rounded-xl shadow-2xl object-contain" />
+            <img src={game.currentSong?.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="max-h-[50vh] w-auto max-w-full rounded-xl shadow-2xl object-contain" />
             <div className="absolute -bottom-4 bg-blue-600 text-white p-3 rounded-full shadow-lg font-bold">
                {game.lastRoundScore > 0 ? <Check size={24}/> : <X size={24}/>}
             </div>
          </div>
-         <h2 className="text-2xl font-bold mb-1 text-white">{game.currentSong.movie}</h2>
-         <p className="text-slate-400 mb-8">{game.currentSong.title}</p>
+         <h2 className="text-2xl font-bold mb-1 text-white">{game.currentSong?.movie}</h2>
+         <p className="text-slate-400 mb-8">{game.currentSong?.title}</p>
          
-         {hasBuzzed && (<div className={`text-3xl md:text-4xl font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>{isCorrect ? `CORRECT! (+${myResult?.actualScore || score})` : "WRONG!"}</div>)}
+         {hasBuzzed && (<div className={`text-3xl md:text-4xl font-black ${color}`}>{msg}</div>)}
          {!hasBuzzed && (<div className="text-xl text-slate-500">Time's Up!</div>)}
       </div>
     );
@@ -1247,7 +1252,7 @@ const PlayerView = ({ gameId, user, username }) => {
           {game.status === 'playing' && game.hintRevealed && !hasBuzzed && (
              <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2 absolute top-4 z-10">
                  <span className="text-2xl">💡</span>
-                 <span className="font-bold text-lg">Hint: {game.currentSong.hint || "It's a movie/show!"}</span>
+                 <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
              </div>
           )}
 
