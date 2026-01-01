@@ -35,8 +35,6 @@ const getEnvironmentConfig = () => {
   }
 
   // 2. Vite / Firebase App Hosting
-  // UNCOMMENT THE LINES BELOW FOR GITHUB/VITE DEPLOYMENT
-  
   try {
     if (import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_API_KEY) {
       return {
@@ -427,7 +425,7 @@ const HostView = ({ gameId, user }) => {
   const [showSettings, setShowSettings] = useState(true);
   const [roundTimeLeft, setRoundTimeLeft] = useState(30);
   const audioRef = useRef(null);
-  const processingRef = useRef(false);
+  const processingRef = useRef(new Set()); // CHANGED: Now a Set to track multiple async verifications
 
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (docSnap) => {
@@ -478,113 +476,88 @@ const HostView = ({ gameId, user }) => {
     }
   }, [game?.currentSong?.previewUrl, game?.status]);
 
-  // ROUND MANAGEMENT LOGIC
+  // --- NEW LOGIC: SCORE AS THEY COME IN ---
   useEffect(() => {
     if (!game || game.status !== 'playing') {
-        processingRef.current = false;
+        processingRef.current.clear();
         return;
     }
 
-    // Check End of Round Conditions
-    const activePlayerCount = players.length;
     const submissions = game.submissions || {};
-    const skips = game.skips || [];
+    const pendingSubmissions = Object.values(submissions).filter(s => s.status === 'pending');
+
+    // 1. Identify items to verify (avoid double processing)
+    const toProcess = pendingSubmissions.filter(s => !processingRef.current.has(s.uid));
     
-    const submittedUids = Object.keys(submissions);
-    // A player is "done" if they have submitted OR they voted to skip
-    const donePlayers = new Set([...submittedUids, ...skips]);
-    const allDone = activePlayerCount > 0 && donePlayers.size >= activePlayerCount;
-    const timeUp = roundTimeLeft === 0;
+    if (toProcess.length > 0) {
+        // Mark as processing
+        toProcess.forEach(s => processingRef.current.add(s.uid));
+        
+        // Trigger verification
+        const verify = async () => {
+             const apiKey = initialGeminiKey;
+             const results = await verifyBatchAnswers(toProcess, game.currentSong.movie, apiKey);
+             
+             const batch = writeBatch(db);
+             const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
 
-    // --- NEW LOGIC: Check for 3 "Correct" Answers (Soft Check) ---
-    // This ends the round early if 3 people likely got it right
-    const correctAnswers = [game.currentSong?.movie, game.currentSong?.title].filter(Boolean).map(s => s.toLowerCase());
-    const potentialCorrectCount = Object.values(submissions).filter(s => {
-        if (!s.answer) return false;
-        const ans = s.answer.toLowerCase();
-        return correctAnswers.some(ca => ans.includes(ca) || ca.includes(ans));
-    }).length;
-
-    const hitLimit = potentialCorrectCount >= 3;
-
-    if (allDone || timeUp || hitLimit) {
-        // ROUND COMPLETE - VERIFY BATCH AND SCORE
-        if (processingRef.current) return;
-        processingRef.current = true;
-
-        const finalizeRound = async () => {
-            const apiKey = initialGeminiKey;
-            
-            // Prepare unverified submissions
-            const submissionsList = Object.keys(submissions).map(uid => ({
-                uid,
-                answer: submissions[uid].answer,
-                timestamp: submissions[uid].timestamp // Important for tie-breaking
-            }));
-            
-            let results = [];
-            if (submissionsList.length > 0) {
-                 results = await verifyBatchAnswers(submissionsList, game.currentSong.movie, apiKey);
-            }
-
-            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-            const batch = writeBatch(db);
-            
-            // --- NEW SCORING LOGIC: ONLY TOP 3 GET POINTS ---
-            // 1. Identify Correct Submissions
-            const correctSubmissions = results.filter(r => r.score > 0).map(r => {
-                const sub = submissions[r.uid];
-                return { ...r, timestamp: sub?.timestamp || Date.now() };
-            });
-
-            // 2. Sort by Timestamp (Fastest Fingers)
-            correctSubmissions.sort((a,b) => a.timestamp - b.timestamp);
-
-            // 3. Take Top 3
-            const winnerUids = correctSubmissions.slice(0, 3).map(c => c.uid);
-
-            let roundWinnerCount = 0;
-
-            // Apply Scores
-            for (const res of results) {
-                const uid = res.uid;
-                const isCorrect = res.score > 0;
-                const isWinner = winnerUids.includes(uid);
-                
-                let finalScore = 0;
-
-                if (isCorrect && isWinner) {
-                    finalScore = res.score; // Full points (100 or 50)
-                    roundWinnerCount++;
-                    res.actualScore = finalScore;
-                    res.outcome = "won";
-                    
-                    const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', uid);
-                    batch.update(playerRef, { score: increment(finalScore) });
-                } else if (isCorrect && !isWinner) {
-                    // Correct but too slow
-                    res.actualScore = 0;
-                    res.outcome = "too_slow";
-                } else {
-                    res.actualScore = 0;
-                    res.outcome = "wrong";
-                }
-            }
-            
-            // Update game state to revealed
-            batch.update(gameRef, {
-                status: 'revealed',
-                lastRoundScore: 0, 
-                roundWinnerCount: roundWinnerCount,
-                roundResults: results
-            });
-            
-            await batch.commit();
+             results.forEach(res => {
+                  const uid = res.uid;
+                  const isCorrect = res.score > 0;
+                  // Update submission status
+                  const submissionUpdate = {
+                      [`submissions.${uid}.status`]: 'verified',
+                      [`submissions.${uid}.score`]: res.score,
+                      [`submissions.${uid}.outcome`]: isCorrect ? 'correct' : 'wrong'
+                  };
+                  batch.update(gameRef, submissionUpdate);
+                  
+                  // Update player score if correct
+                  if (isCorrect) {
+                       const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', uid);
+                       batch.update(playerRef, { score: increment(res.score) });
+                  }
+             });
+             
+             await batch.commit();
+             
+             // Cleanup processing ref
+             toProcess.forEach(s => processingRef.current.delete(s.uid));
         };
-        finalizeRound();
+        verify();
     }
 
-  }, [game?.submissions, game?.skips, players.length, game?.status, roundTimeLeft]);
+    // 2. Check End Conditions (3 Correct OR Time Up)
+    const verified = Object.values(submissions).filter(s => s.status === 'verified');
+    const correctCount = verified.filter(s => s.score > 0).length;
+    const timeUp = roundTimeLeft === 0;
+    
+    // If 3 correct answers found, END THE ROUND IMMEDIATELY
+    if (correctCount >= 3 || timeUp) {
+        const endRound = async () => {
+             // We need to construct the round results for the summary screen
+             // We'll use the existing verified submissions + any that might have just finished
+             // Note: 'verified' here is from the snapshot, so it might be slightly behind the batch update above
+             // But for the summary screen, it's okay. 
+             
+             const finalResults = verified.map(s => ({
+                 uid: s.uid,
+                 score: s.score || 0,
+                 actualScore: s.score || 0, // mapping for display component
+                 outcome: (s.score > 0) ? 'won' : 'wrong'
+             }));
+
+             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+                status: 'revealed',
+                lastRoundScore: 0, 
+                roundWinnerCount: correctCount,
+                roundResults: finalResults
+            });
+        };
+        endRound();
+    }
+
+  }, [game?.submissions, roundTimeLeft, game?.status]);
 
 
   // Auto-Advance
@@ -888,7 +861,7 @@ const HostView = ({ gameId, user }) => {
                                  <span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>
                              )}
                         </div>
-                        <div className="mt-4 text-xs text-slate-500">Only top 3 fastest answers get points!</div>
+                        <div className="mt-4 text-xs text-slate-500">First 3 correct answers end the round!</div>
                      </div>
                    )}
 
@@ -958,8 +931,6 @@ const PlayerView = ({ gameId, user, username }) => {
   const [answer, setAnswer] = useState("");
   const [hasAnswered, setHasAnswered] = useState(false);
   const [showHistory, setShowHistory] = useState(false); 
-  const [timeLeft, setTimeLeft] = useState(10);
-  const [buzzerTime, setBuzzerTime] = useState(null);
 
   useEffect(() => {
     // Game Listener
@@ -968,20 +939,15 @@ const PlayerView = ({ gameId, user, username }) => {
         const data = snap.data();
         setGame(data);
         if (data.status === 'playing') {
-            // Check if I have buzzed
-            const myBuzz = data.buzzes?.find(b => b.uid === user.uid);
-            if (myBuzz && !buzzerTime) setBuzzerTime(Date.now()); // Start timer ref
-            
-            // New round reset for answer input
-            if (!myBuzz && buzzerTime) {
-                setBuzzerTime(null);
-                setHasAnswered(false);
-                setAnswer("");
-            }
+             // New round reset for answer input (based on submissions)
+             const mySub = data.submissions?.[user.uid];
+             if (!mySub && hasAnswered) {
+                 setHasAnswered(false);
+                 setAnswer("");
+             }
         }
         if (data.status === 'lobby') {
              setShowHistory(false);
-             setBuzzerTime(null);
              setHasAnswered(false);
         }
       }
@@ -997,33 +963,14 @@ const PlayerView = ({ gameId, user, username }) => {
     });
 
     return () => { unsubGame(); unsubPlayer(); };
-  }, [gameId, hasAnswered, user.uid, buzzerTime]); // Added buzzerTime dependency
+  }, [gameId, hasAnswered, user.uid]);
 
-  const hasBuzzed = game?.buzzes?.some(b => b.uid === user.uid);
-  // Check local state first to prevent UI flicker, then confirm with DB
+  const hasBuzzed = game?.buzzes?.some(b => b.uid === user.uid); // Keeping 'buzzes' prop for legacy compatibility if needed
   const dbSubmission = game?.submissions?.[user.uid];
   const isWaiting = hasAnswered || !!dbSubmission;
 
-  // Timer Effect
-  useEffect(() => {
-    if (hasBuzzed && game?.status === 'playing' && !isWaiting) {
-        if (timeLeft > 0) {
-            const timerId = setTimeout(() => setTimeLeft(t => t - 1), 1000);
-            return () => clearTimeout(timerId);
-        } else {
-            // Time up!
-            submitAnswer("TIMEOUT");
-        }
-    } else {
-        // Reset timer if round resets or status changes
-        if (!hasBuzzed) setTimeLeft(10);
-    }
-  }, [timeLeft, hasBuzzed, game?.status, isWaiting]);
-
   const buzzIn = async () => {
     if (!game || hasBuzzed || game.status !== 'playing') return;
-    
-    // Add to buzzes array (order matters)
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
         buzzes: arrayUnion({ uid: user.uid, username: username, timestamp: Date.now() })
     });
@@ -1035,14 +982,18 @@ const PlayerView = ({ gameId, user, username }) => {
 
     setHasAnswered(true);
     // Use object map update for submission
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), { 
+    // We also set buzzes for compatibility with the visualizer on host screen
+    const updates = {
         [`submissions.${user.uid}`]: {
             answer: content,
             status: 'pending',
             uid: user.uid,
             timestamp: Date.now()
-        }
-    });
+        },
+        buzzes: arrayUnion({ uid: user.uid, username: username, timestamp: Date.now() })
+    };
+
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), updates);
   };
 
   const voteSkip = async () => {
@@ -1055,8 +1006,6 @@ const PlayerView = ({ gameId, user, username }) => {
   // -- RENDER STATES --
 
   if (!game) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
-
-  const isMe = hasBuzzed;
   
   // 1. GAME OVER - Victory or Defeat
   if (game.status === 'game_over') {
@@ -1150,32 +1099,33 @@ const PlayerView = ({ gameId, user, username }) => {
        }
   }
 
-  // 3. I Buzzed! Input time.
-  if (hasBuzzed && game.status !== 'revealed') {
+  // 3. I am playing! (No buzzer anymore, just type)
+  if (game.status === 'playing') {
     if (!isWaiting) {
         return (
-          <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
+          <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6">
             {game.hintRevealed && (
                  <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
                      <span className="text-2xl">庁</span>
                      <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
                  </div>
             )}
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-2 animate-bounce">YOU'RE UP!</h1>
-            <div className="text-6xl font-mono font-bold text-yellow-400 mb-6">{timeLeft}</div>
+            <Volume2 size={48} className="mb-4 text-blue-400 animate-pulse" />
+            <h1 className="text-3xl md:text-4xl font-black text-white mb-8 text-center">Name that Movie!</h1>
             <div className="w-full max-w-4xl space-y-4">
                <input 
                  autoFocus
                  className="w-full bg-white p-4 rounded-xl text-black text-xl font-bold text-center uppercase placeholder:text-gray-500"
-                 placeholder="MOVIE TITLE?"
+                 placeholder="TYPE MOVIE TITLE HERE..."
                  value={answer}
                  onChange={e => setAnswer(e.target.value)}
                  onKeyDown={e => e.key === 'Enter' && submitAnswer()}
                />
                <div className="flex gap-2">
-                 <button onClick={() => submitAnswer()} className="flex-1 bg-white text-green-900 py-4 rounded-xl font-black text-xl shadow-xl active:scale-95 transition-transform">SUBMIT</button>
+                 <button onClick={() => submitAnswer()} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-xl shadow-xl active:scale-95 transition-transform">SUBMIT</button>
                </div>
             </div>
+            <p className="mt-8 text-slate-400 font-medium text-center text-sm">Be fast! Only first 3 correct answers score points.</p>
           </div>
         );
     } else {
@@ -1184,7 +1134,7 @@ const PlayerView = ({ gameId, user, username }) => {
                 <div className="animate-pulse flex flex-col items-center">
                     <Check size={48} className="mb-4 text-green-400" />
                     <h2 className="text-2xl font-bold">Answer Submitted</h2>
-                    <p className="text-slate-400">Waiting for round to end...</p>
+                    <p className="text-slate-400">Waiting for results...</p>
                 </div>
             </div>
         );
@@ -1203,9 +1153,12 @@ const PlayerView = ({ gameId, user, username }) => {
     if (isCorrect) {
         msg = `CORRECT! (+${score})`;
         color = "text-green-400";
-    } else if (outcome === 'too_slow') {
-        msg = "CORRECT (Too Slow!)";
-        color = "text-yellow-400";
+    } else if (outcome === 'wrong') {
+        msg = "INCORRECT";
+        color = "text-red-400";
+    } else {
+         msg = "DID NOT ANSWER / TOO SLOW";
+         color = "text-slate-400";
     }
     
     return (
@@ -1219,8 +1172,8 @@ const PlayerView = ({ gameId, user, username }) => {
          <h2 className="text-2xl font-bold mb-1 text-white">{game.currentSong?.movie}</h2>
          <p className="text-slate-400 mb-8">{game.currentSong?.title}</p>
          
-         {hasBuzzed && (<div className={`text-3xl md:text-4xl font-black ${color}`}>{msg}</div>)}
-         {!hasBuzzed && (<div className="text-xl text-slate-500">Time's Up!</div>)}
+         {isWaiting && (<div className={`text-3xl md:text-4xl font-black ${color}`}>{msg}</div>)}
+         {!isWaiting && (<div className="text-xl text-slate-500">You didn't submit an answer!</div>)}
       </div>
     );
   }
@@ -1256,24 +1209,10 @@ const PlayerView = ({ gameId, user, username }) => {
        )}
        
        <div className="flex-1 flex flex-col items-center justify-center relative p-4 w-full max-w-full">
-          {game.status === 'playing' && game.hintRevealed && !hasBuzzed && (
-             <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2 absolute top-4 z-10">
-                 <span className="text-2xl">庁</span>
-                 <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
-             </div>
-          )}
-
-          <button onClick={buzzIn} className="w-56 h-56 md:w-80 md:h-80 rounded-full bg-red-600 border-b-8 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.5)] active:border-b-0 active:translate-y-2 active:shadow-none transition-all flex flex-col items-center justify-center group">
-             <span className="text-5xl md:text-7xl font-black text-red-100 group-hover:text-white transition-colors">BUZZ</span>
-          </button>
-          <p className="mt-8 text-slate-400 font-medium animate-pulse text-center">Wait for the music...</p>
-       </div>
-
-       <div className="p-4 md:p-6 shrink-0 safe-area-bottom">
-           <button onClick={voteSkip} disabled={votedSkip} className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${votedSkip ? 'bg-slate-700 text-slate-500' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>
-               <FastForward size={20} />
-               {votedSkip ? "Voted to Skip" : "Vote to Skip Song"}
-           </button>
+           <div className="animate-pulse flex flex-col items-center">
+                <div className="w-16 h-16 border-4 border-t-blue-500 border-r-blue-500 border-b-slate-700 border-l-slate-700 rounded-full animate-spin mb-4"></div>
+                <p className="text-slate-400 font-medium">Waiting for round to start...</p>
+           </div>
        </div>
     </div>
   );
