@@ -20,7 +20,7 @@ import {
   writeBatch,
   serverTimestamp
 } from 'firebase/firestore';
-import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, Lightbulb } from 'lucide-react';
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -425,7 +425,7 @@ const HostView = ({ gameId, user }) => {
   const [showSettings, setShowSettings] = useState(true);
   const [roundTimeLeft, setRoundTimeLeft] = useState(30);
   const audioRef = useRef(null);
-  const processingRef = useRef(new Set()); // CHANGED: Now a Set to track multiple async verifications
+  const processingRef = useRef(new Set()); 
 
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (docSnap) => {
@@ -451,15 +451,6 @@ const HostView = ({ gameId, user }) => {
       }
   }, [roundTimeLeft, game?.status]);
   
-  // Hint Reveal at 10 seconds elapsed (20s remaining)
-  useEffect(() => {
-      if (game?.status === 'playing' && roundTimeLeft === 20 && !game.hintRevealed) {
-          updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-              hintRevealed: true
-          });
-      }
-  }, [roundTimeLeft, game?.status, game?.hintRevealed]);
-
   // Audio Player Effect - CONTINUOUS PLAY
   useEffect(() => {
     if (audioRef.current) {
@@ -503,11 +494,20 @@ const HostView = ({ gameId, user }) => {
 
              results.forEach(res => {
                   const uid = res.uid;
-                  const isCorrect = res.score > 0;
+                  let score = res.score;
+                  
+                  // Apply 50% penalty if hint was taken
+                  const hasHint = game.hints?.[uid];
+                  if (hasHint && score > 0) {
+                      score = Math.floor(score / 2);
+                  }
+
+                  const isCorrect = score > 0;
+                  
                   // Update submission status
                   const submissionUpdate = {
                       [`submissions.${uid}.status`]: 'verified',
-                      [`submissions.${uid}.score`]: res.score,
+                      [`submissions.${uid}.score`]: score,
                       [`submissions.${uid}.outcome`]: isCorrect ? 'correct' : 'wrong'
                   };
                   batch.update(gameRef, submissionUpdate);
@@ -515,7 +515,7 @@ const HostView = ({ gameId, user }) => {
                   // Update player score if correct
                   if (isCorrect) {
                        const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players', uid);
-                       batch.update(playerRef, { score: increment(res.score) });
+                       batch.update(playerRef, { score: increment(score) });
                   }
              });
              
@@ -536,10 +536,6 @@ const HostView = ({ gameId, user }) => {
     if (correctCount >= 3 || timeUp) {
         const endRound = async () => {
              // We need to construct the round results for the summary screen
-             // We'll use the existing verified submissions + any that might have just finished
-             // Note: 'verified' here is from the snapshot, so it might be slightly behind the batch update above
-             // But for the summary screen, it's okay. 
-             
              const finalResults = verified.map(s => ({
                  uid: s.uid,
                  score: s.score || 0,
@@ -606,6 +602,7 @@ const HostView = ({ gameId, user }) => {
       skips: [],
       buzzes: [],      
       submissions: {}, 
+      hints: {}, // Initialize hints map
       currentSong: { ...trackData, previewUrl, coverArt },
       feedbackMessage: null,
       roundResults: [],
@@ -683,6 +680,7 @@ const HostView = ({ gameId, user }) => {
       skips: [],
       buzzes: [],
       submissions: {},
+      hints: {}, // Reset hints
       feedbackMessage: null,
       roundResults: [],
       roundStart: Date.now(),
@@ -802,12 +800,6 @@ const HostView = ({ gameId, user }) => {
                    {/* SHOW LIVE BUZZES */}
                    {game?.status === 'playing' && buzzes.length > 0 && (
                        <div className="flex flex-col items-center gap-4 mb-8">
-                           {game.hintRevealed && (
-                               <div className="bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 mb-4 animate-bounce-short flex items-center gap-2">
-                                   <span className="text-2xl">庁</span>
-                                   <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
-                               </div>
-                           )}
                            <h3 className="text-2xl font-bold animate-pulse text-yellow-400">Guessing...</h3>
                            <div className="flex flex-wrap justify-center gap-3">
                                {buzzes.map((b, i) => {
@@ -848,12 +840,6 @@ const HostView = ({ gameId, user }) => {
                    {/* PLAYING STATE */}
                    {game?.status === 'playing' && buzzes.length === 0 && (
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
-                        {game.hintRevealed && (
-                           <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
-                               <span className="text-2xl">庁</span>
-                               <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
-                           </div>
-                        )}
                         <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
                         <div className="mt-4 flex gap-2">
@@ -968,11 +954,19 @@ const PlayerView = ({ gameId, user, username }) => {
   const hasBuzzed = game?.buzzes?.some(b => b.uid === user.uid); // Keeping 'buzzes' prop for legacy compatibility if needed
   const dbSubmission = game?.submissions?.[user.uid];
   const isWaiting = hasAnswered || !!dbSubmission;
+  const hintTaken = game?.hints?.[user.uid];
 
   const buzzIn = async () => {
     if (!game || hasBuzzed || game.status !== 'playing') return;
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
         buzzes: arrayUnion({ uid: user.uid, username: username, timestamp: Date.now() })
+    });
+  };
+
+  const takeHint = async () => {
+    if (!game || hintTaken || game.status !== 'playing') return;
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+        [`hints.${user.uid}`]: true
     });
   };
 
@@ -1104,18 +1098,30 @@ const PlayerView = ({ gameId, user, username }) => {
     if (!isWaiting) {
         return (
           <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6">
-            {game.hintRevealed && (
-                 <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
-                     <span className="text-2xl">庁</span>
-                     <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
-                 </div>
-            )}
             <Volume2 size={48} className="mb-4 text-blue-400 animate-pulse" />
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-8 text-center">Name that Movie!</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-white mb-4 text-center">Name that Movie!</h1>
+            
+            {/* HINT SECTION */}
+            <div className="mb-6 w-full max-w-md">
+                 {!hintTaken ? (
+                     <button 
+                       onClick={takeHint}
+                       className="w-full py-3 border-2 border-dashed border-slate-600 text-slate-400 rounded-xl hover:border-yellow-500 hover:text-yellow-500 transition-colors flex items-center justify-center gap-2"
+                     >
+                       <Lightbulb size={18} /> Need a Hint? (50% Score Penalty)
+                     </button>
+                 ) : (
+                     <div className="w-full py-4 bg-yellow-900/30 border border-yellow-600/50 rounded-xl text-yellow-200 text-center animate-fade-in px-4">
+                         <div className="text-xs font-bold uppercase tracking-widest text-yellow-500 mb-1">HINT</div>
+                         <div className="font-bold text-lg">{game.currentSong?.artist} - {game.currentSong?.year}</div>
+                     </div>
+                 )}
+            </div>
+
             <div className="w-full max-w-4xl space-y-4">
                <input 
                  autoFocus
-                 className="w-full bg-white p-4 rounded-xl text-black text-xl font-bold text-center uppercase placeholder:text-gray-500"
+                 className="w-full bg-white p-4 rounded-xl text-black text-xl font-bold text-center uppercase placeholder:text-gray-500 shadow-xl"
                  placeholder="TYPE MOVIE TITLE HERE..."
                  value={answer}
                  onChange={e => setAnswer(e.target.value)}
