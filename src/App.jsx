@@ -492,18 +492,30 @@ const HostView = ({ gameId, user }) => {
              const batch = writeBatch(db);
              const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
 
+             // Calculate baseline for rank penalty - based on ALREADY verified correct submissions
+             const currentVerified = Object.values(game.submissions || {}).filter(s => s.status === 'verified');
+             const alreadyCorrectCount = currentVerified.filter(s => s.outcome === 'correct').length;
+             
+             let batchCorrectIndex = 0; // Local counter for this batch
+
              results.forEach(res => {
                   const uid = res.uid;
                   let score = res.score;
+                  const isCorrect = score > 0;
                   
+                  if (isCorrect) {
+                      // Rank Penalty: 10pts for every correct answer before you
+                      const penalty = (alreadyCorrectCount + batchCorrectIndex) * 10;
+                      score = Math.max(0, score - penalty);
+                      batchCorrectIndex++;
+                  }
+
                   // Apply 50% penalty if hint was taken
                   const hasHint = game.hints?.[uid];
                   if (hasHint && score > 0) {
                       score = Math.floor(score / 2);
                   }
 
-                  const isCorrect = score > 0;
-                  
                   // Update submission status
                   const submissionUpdate = {
                       [`submissions.${uid}.status`]: 'verified',
@@ -527,16 +539,21 @@ const HostView = ({ gameId, user }) => {
         verify();
     }
 
-    // 2. Check End Conditions (3 Correct OR Time Up)
-    const verified = Object.values(submissions).filter(s => s.status === 'verified');
-    const correctCount = verified.filter(s => s.score > 0).length;
+    // 2. Check End Conditions (3 Correct OR Time Up OR All Submitted & Verified)
+    const allSubs = Object.values(submissions);
+    const verifiedSubs = allSubs.filter(s => s.status === 'verified');
+    const correctCount = verifiedSubs.filter(s => s.outcome === 'correct').length;
     const timeUp = roundTimeLeft === 0;
     
+    // Check if ALL players have submitted and are verified
+    const allPlayersSubmitted = players.length > 0 && allSubs.length >= players.length;
+    const allProcessed = allPlayersSubmitted && allSubs.every(s => s.status === 'verified');
+    
     // If 3 correct answers found, END THE ROUND IMMEDIATELY
-    if (correctCount >= 3 || timeUp) {
+    if (correctCount >= 3 || timeUp || allProcessed) {
         const endRound = async () => {
              // We need to construct the round results for the summary screen
-             const finalResults = verified.map(s => ({
+             const finalResults = verifiedSubs.map(s => ({
                  uid: s.uid,
                  score: s.score || 0,
                  actualScore: s.score || 0, // mapping for display component
@@ -553,7 +570,7 @@ const HostView = ({ gameId, user }) => {
         endRound();
     }
 
-  }, [game?.submissions, roundTimeLeft, game?.status]);
+  }, [game?.submissions, roundTimeLeft, game?.status, players.length]);
 
 
   // Auto-Advance
