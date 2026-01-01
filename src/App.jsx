@@ -427,6 +427,7 @@ const HostView = ({ gameId, user }) => {
   const [showSettings, setShowSettings] = useState(true);
   const [roundTimeLeft, setRoundTimeLeft] = useState(30);
   const audioRef = useRef(null);
+  const processingRef = useRef(false);
 
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (docSnap) => {
@@ -479,7 +480,10 @@ const HostView = ({ gameId, user }) => {
 
   // ROUND MANAGEMENT LOGIC
   useEffect(() => {
-    if (!game || game.status !== 'playing') return;
+    if (!game || game.status !== 'playing') {
+        processingRef.current = false;
+        return;
+    }
 
     // Check End of Round Conditions
     const activePlayerCount = players.length;
@@ -505,6 +509,9 @@ const HostView = ({ gameId, user }) => {
 
     if (allDone || timeUp || hitLimit) {
         // ROUND COMPLETE - VERIFY BATCH AND SCORE
+        if (processingRef.current) return;
+        processingRef.current = true;
+
         const finalizeRound = async () => {
             const apiKey = initialGeminiKey;
             
@@ -824,7 +831,7 @@ const HostView = ({ gameId, user }) => {
                        <div className="flex flex-col items-center gap-4 mb-8">
                            {game.hintRevealed && (
                                <div className="bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 mb-4 animate-bounce-short flex items-center gap-2">
-                                   <span className="text-2xl">💡</span>
+                                   <span className="text-2xl">庁</span>
                                    <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
                                </div>
                            )}
@@ -870,7 +877,7 @@ const HostView = ({ gameId, user }) => {
                      <div className="animate-pulse flex flex-col items-center text-blue-400">
                         {game.hintRevealed && (
                            <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
-                               <span className="text-2xl">💡</span>
+                               <span className="text-2xl">庁</span>
                                <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
                            </div>
                         )}
@@ -1150,7 +1157,7 @@ const PlayerView = ({ gameId, user, username }) => {
           <div className="min-h-screen bg-green-900 flex flex-col items-center justify-center p-6">
             {game.hintRevealed && (
                  <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2">
-                     <span className="text-2xl">💡</span>
+                     <span className="text-2xl">庁</span>
                      <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
                  </div>
             )}
@@ -1251,7 +1258,7 @@ const PlayerView = ({ gameId, user, username }) => {
        <div className="flex-1 flex flex-col items-center justify-center relative p-4 w-full max-w-full">
           {game.status === 'playing' && game.hintRevealed && !hasBuzzed && (
              <div className="mb-6 bg-blue-600/90 px-6 py-3 rounded-xl border-2 border-blue-400 animate-bounce-short flex items-center gap-2 absolute top-4 z-10">
-                 <span className="text-2xl">💡</span>
+                 <span className="text-2xl">庁</span>
                  <span className="font-bold text-lg">Hint: {game.currentSong?.hint || "It's a movie/show!"}</span>
              </div>
           )}
