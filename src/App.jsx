@@ -214,7 +214,8 @@ const pickRandomSong = async (categoryList, playedSongsHistory = []) => {
             selectedSong = {
                 ...candidate,
                 previewUrl: musicData.previewUrl,
-                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
+                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600'),
+                hint: candidate.hint // Ensure hint is passed through
             };
         } else {
             availableSongs.splice(randomIndex, 1);
@@ -475,6 +476,7 @@ const HostView = ({ gameId, user }) => {
     }
 
     const submissions = game.submissions || {};
+    const skips = game.skips || [];
     const pendingSubmissions = Object.values(submissions).filter(s => s.status === 'pending');
 
     // 1. Identify items to verify (avoid double processing)
@@ -539,17 +541,19 @@ const HostView = ({ gameId, user }) => {
         verify();
     }
 
-    // 2. Check End Conditions (3 Correct OR Time Up OR All Submitted & Verified)
+    // 2. Check End Conditions (3 Correct OR Time Up OR All Submitted/Skipped & Verified)
     const allSubs = Object.values(submissions);
     const verifiedSubs = allSubs.filter(s => s.status === 'verified');
     const correctCount = verifiedSubs.filter(s => s.outcome === 'correct').length;
     const timeUp = roundTimeLeft === 0;
     
-    // Check if ALL players have submitted and are verified
-    const allPlayersSubmitted = players.length > 0 && allSubs.length >= players.length;
-    const allProcessed = allPlayersSubmitted && allSubs.every(s => s.status === 'verified');
+    // Check if ALL players have either submitted (and verified) or skipped
+    const submittedUids = Object.keys(submissions);
+    const skippedUids = skips;
+    const allParticipated = players.length > 0 && new Set([...submittedUids, ...skippedUids]).size >= players.length;
+    const allProcessed = allParticipated && allSubs.every(s => s.status === 'verified');
     
-    // If 3 correct answers found, END THE ROUND IMMEDIATELY
+    // If 3 correct answers found OR time up OR everyone is done, END THE ROUND
     if (correctCount >= 3 || timeUp || allProcessed) {
         const endRound = async () => {
              // We need to construct the round results for the summary screen
@@ -570,7 +574,7 @@ const HostView = ({ gameId, user }) => {
         endRound();
     }
 
-  }, [game?.submissions, roundTimeLeft, game?.status, players.length]);
+  }, [game?.submissions, game?.skips, roundTimeLeft, game?.status, players.length]);
 
 
   // Auto-Advance
@@ -672,7 +676,8 @@ const HostView = ({ gameId, user }) => {
             selectedSong = {
                 ...candidate,
                 previewUrl: musicData.previewUrl,
-                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600')
+                coverArt: posterUrl || musicData.artworkUrl100?.replace('100x100', '600x600'),
+                hint: candidate.hint
             };
         } else {
             availableSongs.splice(randomIndex, 1);
@@ -972,6 +977,7 @@ const PlayerView = ({ gameId, user, username }) => {
   const dbSubmission = game?.submissions?.[user.uid];
   const isWaiting = hasAnswered || !!dbSubmission;
   const hintTaken = game?.hints?.[user.uid];
+  const votedSkip = game?.skips?.includes(user.uid);
 
   const buzzIn = async () => {
     if (!game || hasBuzzed || game.status !== 'playing') return;
@@ -1112,6 +1118,17 @@ const PlayerView = ({ gameId, user, username }) => {
 
   // 3. I am playing! (No buzzer anymore, just type)
   if (game.status === 'playing') {
+    if (votedSkip) {
+         return (
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                <div className="animate-pulse flex flex-col items-center">
+                    <FastForward size={48} className="mb-4 text-yellow-500" />
+                    <h2 className="text-2xl font-bold">Voted to Skip</h2>
+                    <p className="text-slate-400">Waiting for round to end...</p>
+                </div>
+            </div>
+        );
+    }
     if (!isWaiting) {
         return (
           <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6">
@@ -1130,7 +1147,7 @@ const PlayerView = ({ gameId, user, username }) => {
                  ) : (
                      <div className="w-full py-4 bg-yellow-900/30 border border-yellow-600/50 rounded-xl text-yellow-200 text-center animate-fade-in px-4">
                          <div className="text-xs font-bold uppercase tracking-widest text-yellow-500 mb-1">HINT</div>
-                         <div className="font-bold text-lg">{game.currentSong?.artist} - {game.currentSong?.year}</div>
+                         <div className="font-bold text-lg">{game.currentSong?.hint || "No hint available."}</div>
                      </div>
                  )}
             </div>
@@ -1148,6 +1165,16 @@ const PlayerView = ({ gameId, user, username }) => {
                  <button onClick={() => submitAnswer()} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-xl shadow-xl active:scale-95 transition-transform">SUBMIT</button>
                </div>
             </div>
+            
+            <button 
+                onClick={voteSkip} 
+                disabled={votedSkip}
+                className={`mt-6 w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${votedSkip ? 'bg-slate-800 text-slate-500' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
+            >
+                <FastForward size={20} />
+                {votedSkip ? "Waiting for others..." : "Don't know? Vote to Skip"}
+            </button>
+
             <p className="mt-8 text-slate-400 font-medium text-center text-sm">Be fast! Only first 3 correct answers score points.</p>
           </div>
         );
@@ -1201,44 +1228,8 @@ const PlayerView = ({ gameId, user, username }) => {
     );
   }
 
-  const votedSkip = game.skips?.includes(user.uid);
-  
-  return (
-    <div className="min-h-screen bg-slate-900 overflow-hidden flex flex-col relative h-screen">
-       <div className="bg-slate-800 p-4 flex justify-between items-center shadow-lg z-10 shrink-0">
-           <div className="flex items-center gap-2">
-               {myAvatar && <img src={myAvatar} className="w-10 h-10 rounded-full border border-slate-500 object-cover bg-slate-700" />}
-               <div>
-                   <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Score</div>
-                   <div className="text-xl font-black text-blue-400">{myScore}</div>
-               </div>
-           </div>
-           <div className="text-center">
-               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Room</div>
-               <div className="font-mono text-lg text-white">{gameId}</div>
-           </div>
-           <div className="text-right">
-               <div className="text-[10px] md:text-xs text-slate-400 uppercase font-bold tracking-widest">Song</div>
-               <div className="text-xl font-bold text-white">{game.round}/{game.totalRounds}</div>
-           </div>
-       </div>
-
-       {game.feedbackMessage && (
-           <div className="absolute top-20 left-0 right-0 p-4 flex justify-center z-50 animate-bounce-short">
-               <div className="bg-red-600 text-white px-4 py-2 rounded-full font-bold shadow-lg text-sm text-center">
-                   {game.feedbackMessage}
-               </div>
-           </div>
-       )}
-       
-       <div className="flex-1 flex flex-col items-center justify-center relative p-4 w-full max-w-full">
-           <div className="animate-pulse flex flex-col items-center">
-                <div className="w-16 h-16 border-4 border-t-blue-500 border-r-blue-500 border-b-slate-700 border-l-slate-700 rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-400 font-medium">Waiting for round to start...</p>
-           </div>
-       </div>
-    </div>
-  );
+  // Fallback return for lobby logic in case not caught above (though main return is below)
+  return null; 
 };
 
 // 4. MAIN APP CONTROLLER
