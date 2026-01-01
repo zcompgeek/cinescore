@@ -83,7 +83,15 @@ import { CATEGORIES } from './data';
 // const CATEGORIES = {};
 
 // --- UTILS ---
-const generateCode = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+const generateCode = () => {
+  // Removed O and 0 to prevent confusion
+  const chars = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789";
+  let result = "";
+  for (let i = 0; i < 4; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
 // Gemini Batch Answer Verification
 const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
@@ -757,21 +765,21 @@ const HostView = ({ gameId, user }) => {
           </div>
           <div className="pt-4 border-t border-slate-700 mt-6">
             <h3 className="font-bold mb-4 flex items-center gap-2"><Users size={18}/> Players Joined ({players.length})</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
               {players.map(p => (
-                <div key={p.id} className="bg-slate-700/50 p-3 rounded-xl flex items-center gap-3 border border-slate-600">
+                <div key={p.id} className="bg-slate-700/50 p-4 rounded-xl flex flex-col items-center gap-3 border border-slate-600 text-center">
                   <div className="relative">
                     {p.avatar ? (
-                        <img src={p.avatar} alt={p.username} className="w-10 h-10 rounded-full bg-slate-800 border-2 border-blue-400 object-cover" />
+                        <img src={p.avatar} alt={p.username} className="w-24 h-24 rounded-full bg-slate-800 border-4 border-blue-400 object-cover" />
                     ) : (
-                        <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-500 flex items-center justify-center">
-                            <span className="text-xs font-bold">{p.username.charAt(0)}</span>
+                        <div className="w-24 h-24 rounded-full bg-slate-800 border-4 border-slate-500 flex items-center justify-center">
+                            <span className="text-4xl font-bold">{p.username.charAt(0)}</span>
                         </div>
                     )}
                   </div>
-                  <div className="overflow-hidden">
-                      <div className="font-bold truncate text-sm">{p.username}</div>
-                      <div className="text-xs text-blue-300 font-mono">{p.score} pts</div>
+                  <div className="overflow-hidden w-full">
+                      <div className="font-bold truncate text-lg">{p.username}</div>
+                      <div className="text-sm text-blue-300 font-mono">{p.score} pts</div>
                   </div>
                 </div>
               ))}
@@ -1024,6 +1032,27 @@ const PlayerView = ({ gameId, user, username }) => {
 
   if (!game) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
   
+  // 4. Lobby (Waiting for host) - FIX for White Screen
+  if (game.status === 'lobby') {
+      return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+            <div className="animate-bounce mb-6">
+                {myAvatar ? (
+                    <img src={myAvatar} className="w-32 h-32 rounded-full border-4 border-blue-500 bg-slate-800 object-cover" />
+                ) : (
+                    <Users size={64} className="text-blue-500" />
+                )}
+            </div>
+            <h1 className="text-3xl font-bold mb-2">Welcome, {username}!</h1>
+            <p className="text-slate-400 text-lg">Waiting for host to start...</p>
+            <div className="mt-8 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                <p className="text-xs uppercase font-bold text-slate-500 mb-1">Room Code</p>
+                <p className="text-4xl font-mono font-black tracking-widest text-blue-400">{gameId}</p>
+            </div>
+        </div>
+      );
+  }
+
   // 1. GAME OVER - Victory or Defeat
   if (game.status === 'game_over') {
        // Check if user wants to see history
