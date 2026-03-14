@@ -23,6 +23,8 @@ import {
   connectFirestoreEmulator
 } from 'firebase/firestore';
 import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, Lightbulb, Bell } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+
 
 // --- CONFIGURATION & ENVIRONMENT SETUP ---
 const getEnvironmentConfig = () => {
@@ -245,6 +247,20 @@ const Landing = ({ setMode, joinGame, hostGame }) => {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [step, setStep] = useState(1);
+  const nameInputRef = useRef(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const codeParam = params.get('code');
+    if (codeParam) {
+      setCode(codeParam.toUpperCase().slice(0, 4));
+      setTimeout(() => {
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+        }
+      }, 100);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -264,7 +280,7 @@ const Landing = ({ setMode, joinGame, hostGame }) => {
                <button onClick={() => hostGame()} className="w-full py-4 bg-white text-slate-900 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg">Host a New Game</button>
                <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-700"></span></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-slate-900 text-slate-500">OR JOIN EXISTING</span></div></div>
                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-3 w-full">
-                 <input type="text" placeholder="YOUR NAME" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600" value={name} onChange={e => setName(e.target.value)} />
+                 <input ref={nameInputRef} type="text" placeholder="YOUR NAME" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-slate-600" value={name} onChange={e => setName(e.target.value)} />
                  <input type="text" placeholder="GAME CODE (e.g. ABCD)" className="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none uppercase placeholder:text-slate-600" maxLength={4} value={code} onChange={e => setCode(e.target.value.toUpperCase())} />
                  <button disabled={!name || code.length !== 4} onClick={() => setStep(2)} className="w-full py-3 bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-2">Next: Draw Avatar <ArrowRight size={18} className="inline ml-1" /></button>
                </div>
@@ -559,7 +575,18 @@ const HostView = ({ gameId, user }) => {
       <div className="min-h-screen bg-slate-900 text-white p-4 md:p-6 flex flex-col items-center">
         <h2 className="text-3xl font-bold mb-6">Game Setup</h2>
         <div className="bg-slate-800 p-4 md:p-6 rounded-xl w-full max-w-6xl border border-slate-700">
-          <div><label className="block text-sm font-bold mb-2 text-slate-400">GAME CODE</label><div className="text-4xl font-mono font-black text-center bg-black/30 p-4 rounded-lg tracking-widest text-blue-400">{gameId}</div></div>
+          <div className="flex flex-col md:flex-row gap-6 items-center bg-slate-900/50 p-6 rounded-xl border border-slate-700">
+            <div className="flex-1 text-center">
+              <label className="block text-sm font-bold mb-2 text-slate-400">GAME CODE</label>
+              <div className="text-6xl font-mono font-black tracking-widest text-blue-400">{gameId}</div>
+            </div>
+            <div className="flex flex-col items-center shrink-0">
+              <div className="bg-white p-2 rounded-lg shadow-lg">
+                <QRCodeSVG value={`${window.location.origin}?code=${gameId}`} size={140} />
+              </div>
+              <p className="text-xs text-slate-400 mt-2 font-bold uppercase tracking-wider">Scan to Join</p>
+            </div>
+          </div>
           <div className="mt-6">
              <label className="block text-sm font-bold mb-2 text-slate-400">CATEGORY</label>
              <div className="grid grid-cols-2 gap-2 mb-4">{Object.keys(CATEGORIES).map(c => (<button key={c} onClick={() => setCategory(c)} className={`p-2 rounded capitalize font-bold text-xs md:text-sm ${category === c ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{c.replace('_', ' ')}</button>))}</div>
