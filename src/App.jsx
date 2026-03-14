@@ -108,24 +108,29 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
   const guessesString = submissionsList.map(s => `ID: ${s.uid}, Guess: "${s.answer}"`).join("\n");
 
   const prompt = `
-    I am a trivia game judge.
-    The correct movie answer is: "${correctMovie}".
+    You are a fair trivia game judge.
+    The correct movie or TV show answer is: "${correctMovie}".
     
     Here is a list of player guesses:
     ${guessesString}
     
-    For each guess, determine the Match Type based on these rules:
-    1. If the guess is the exact movie or a very widely accepted distinct title (e.g. "Empire Strikes Back" for "Star Wars: Episode V"), score is 100.
-    2. If the guess is the correct franchise but not the specific movie, score is 50.
-    3. If the guess is wrong, score is 0.
+    For each guess, determine the score based on these rules:
+    - 100 points: The guess refers to the correct movie/show. Allow for minor 
+      typos, missing articles (like "The" or "A"), or universally accepted 
+      alternate/short titles (e.g., "Empire Strikes Back" for 
+      "Star Wars: Episode V").
+    - 50 points: The guess correctly names the franchise or series, but misses 
+      the specific subtitle/sequel number (e.g., "Harry Potter" instead of 
+      "Harry Potter and the Goblet of Fire").
+    - 0 points: The guess is incorrect.
     
-    Return ONLY a raw JSON array of objects with 'uid' and 'score':
-    [{"uid": "...", "score": 100}, {"uid": "...", "score": 50}, ...]
+    Return ONLY a raw JSON array of objects with the 'uid' and numeric 'score':
+    [{"uid": "...", "score": 100}]
   `;
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -146,11 +151,13 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
     return result;
   } catch (e) {
     console.error("[JUDGE] Exception during batch verification:", e);
-    const normalizedCorrect = correctMovie.toLowerCase();
+    const normalizedCorrect = correctMovie.toLowerCase().trim();
     return submissionsList.map(s => {
-        const normalizedGuess = s.answer.toLowerCase();
+        const normalizedGuess = s.answer.toLowerCase().trim();
         let score = 0;
-        if (normalizedCorrect.includes(normalizedGuess) || normalizedGuess.includes(normalizedCorrect)) score = 100;
+        if (normalizedGuess.length > 2 && (normalizedCorrect.includes(normalizedGuess) || normalizedGuess.includes(normalizedCorrect))) {
+            score = 100;
+        }
         return { uid: s.uid, score };
     });
   }
