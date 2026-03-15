@@ -98,99 +98,58 @@ const generateCode = () => {
   return result;
 };
 
-// Gemini Batch Answer Verification
-const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
-  if (!apiKey || apiKey === "") {
-      console.error("[JUDGE] Error: No API Key provided.");
-      return submissionsList.map(s => ({ uid: s.uid, score: 0 })); 
-  }
+// Local Batch Answer Verification utilizing Levenshtein distance
+const levenshtein = (a, b) => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    let matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+    for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+    for (let j = 1; j <= b.length; j++) {
+        for (let i = 1; i <= a.length; i++) {
+            const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+            matrix[j][i] = Math.min(
+                matrix[j][i - 1] + 1,
+                matrix[j - 1][i] + 1,
+                matrix[j - 1][i - 1] + indicator
+            );
+        }
+    }
+    return matrix[b.length][a.length];
+};
+
+const verifyBatchAnswers = async (submissionsList, currentSong) => {
+  const acceptableAnswers = currentSong.acceptableAnswers || [currentSong.movie.toLowerCase().trim()];
   
-  const guessesString = submissionsList.map(s => `ID: ${s.uid}, Guess: "${s.answer}"`).join("\n");
-
-  const prompt = `
-    You are a fair trivia game judge.
-    The correct movie or TV show answer is: "${correctMovie}".
-    
-    Here is a list of player guesses:
-    ${guessesString}
-    
-    For each guess, determine the score based on these rules:
-    - 100 points: The guess refers to the correct movie/show. Allow for minor 
-      typos, missing articles (like "The" or "A"), widely accepted 
-      acronyms/abbreviations (e.g., "Dexter's Lab" for "Dexter's Laboratory"), 
-      or universally accepted alternate/short titles (e.g., "Empire Strikes Back" 
-      for "Star Wars: Episode V").
-    - 50 points: The guess correctly names the franchise, cinematic universe, or 
-      series, but misses the specific subtitle/sequel. This includes character 
-      or code names that denote the franchise (e.g., "Harry Potter" instead of 
-      "Harry Potter and the Goblet of Fire", or "007" / "James Bond" for "Dr. No").
-    - 0 points: The guess is incorrect.
-    
-    Return ONLY a raw JSON array of objects with the 'uid', numeric 'score', and a brief string 'explanation' of your judgement:
-    [{"uid": "...", "score": 100, "explanation": "..."}]
-  `;
-
-  console.log(`[JUDGE] Sending prompt to Gemini:\n${prompt}`);
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
+  return submissionsList.map(s => {
+      const guess = s.answer.toLowerCase().trim();
+      const cleanGuess = guess.replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+      
+      let bestScore = 0;
+      let exp = "Incorrect.";
+      
+      if (cleanGuess.length > 0) {
+        for (const ans of acceptableAnswers) {
+          const cleanAns = ans.replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+          const dist = levenshtein(cleanAns, cleanGuess);
+          
+          if (dist <= 2) {
+              bestScore = 100;
+              exp = `Matched acceptable answer: "${ans}"`;
+              break; // max score
+          } 
+          
+          // Substring match for partial points if guess is reasonably long
+          if (bestScore < 50 && cleanAns.length > 3 && cleanGuess.length > 2 && (cleanAns.includes(cleanGuess) || cleanGuess.includes(cleanAns))) {
+              bestScore = 50;
+              exp = `Partial match with: "${ans}"`;
+          }
+        }
       }
-    );
-    
-    if (!response.ok) throw new Error(`API Error ${response.status}`);
-
-    const data = await response.json();
-    let resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    console.log(`[JUDGE] Received response from Gemini:\n${resultText}`);
-    
-    resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
-    const result = JSON.parse(resultText);
-    if (!Array.isArray(result)) throw new Error("Invalid response format");
-    return result;
-  } catch (e) {
-    console.error("[JUDGE] Exception during batch verification:", e);
-    const normalizedCorrect = correctMovie.toLowerCase().trim();
-    
-    // Explicit manual overrides for common edge cases in a fallback scenario
-    const hardcodedSynonyms = {
-      "dr. no": ["007", "james bond"],
-      "dexter's laboratory": ["dexter's lab"],
-      "star wars": ["empire strikes back", "a new hope", "return of the jedi"]
-    };
-
-    return submissionsList.map(s => {
-        const normalizedGuess = s.answer.toLowerCase().trim();
-        let score = 0;
-        
-        // Exact substring match
-        if (normalizedGuess.length > 2 && (normalizedCorrect.includes(normalizedGuess) || normalizedGuess.includes(normalizedCorrect))) {
-            score = 100;
-        }
-
-        // Custom aliases handling
-        for (const [key, synonyms] of Object.entries(hardcodedSynonyms)) {
-            if (normalizedCorrect.includes(key)) {
-                for (const syn of synonyms) {
-                  if (normalizedGuess.includes(syn) || syn.includes(normalizedGuess)) {
-                    // Give 50 for franchise if it's James Bond, or 100 for Dexter's Lab
-                    score = key === "dr. no" ? 50 : 100;
-                  }
-                }
-            }
-        }
-        
-        return { uid: s.uid, score };
-    });
-  }
+      
+      console.log(`[JUDGE] Evaluated "${s.answer}" -> ${bestScore} points. Explanation: ${exp}`);
+      return { uid: s.uid, score: bestScore, explanation: exp };
+  });
 };
 
 const searchItunes = async (query) => {
@@ -409,8 +368,7 @@ const HostView = ({ gameId, user }) => {
         toProcess.forEach(s => processingRef.current.add(s.uid));
         
         const verify = async () => {
-             const apiKey = initialGeminiKey;
-             const results = await verifyBatchAnswers(toProcess, game.currentSong.movie, apiKey);
+             const results = await verifyBatchAnswers(toProcess, game.currentSong);
              
              const batch = writeBatch(db);
              const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
