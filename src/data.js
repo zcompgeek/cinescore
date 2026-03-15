@@ -1,5 +1,9 @@
 // --- TRIVIA DATASETS ---
 export const CATEGORIES = {
+  testing_category: [
+    { title: "007 Theme", artist: "Monty Norman", movie: "Dr. No", year: 1962, hint: "First James Bond film released." },
+    { title: "Dexter's Laboratory Theme", artist: "Thomas Chase", movie: "Dexter's Laboratory", year: 1996, hint: "Boy genius hides lab from sister." }
+  ],
   all_time_scores: [ // Instrumental scores only. No lyrical songs. Max 3 per film.
     // --- John Williams ---
     { title: "The Imperial March", artist: "John Williams", movie: "The Empire Strikes Back", year: 1980, hint: "Luke trains with Yoda on Dagobah." },

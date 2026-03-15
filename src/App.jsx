@@ -116,17 +116,21 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
     
     For each guess, determine the score based on these rules:
     - 100 points: The guess refers to the correct movie/show. Allow for minor 
-      typos, missing articles (like "The" or "A"), or universally accepted 
-      alternate/short titles (e.g., "Empire Strikes Back" for 
-      "Star Wars: Episode V").
-    - 50 points: The guess correctly names the franchise or series, but misses 
-      the specific subtitle/sequel number (e.g., "Harry Potter" instead of 
-      "Harry Potter and the Goblet of Fire").
+      typos, missing articles (like "The" or "A"), widely accepted 
+      acronyms/abbreviations (e.g., "Dexter's Lab" for "Dexter's Laboratory"), 
+      or universally accepted alternate/short titles (e.g., "Empire Strikes Back" 
+      for "Star Wars: Episode V").
+    - 50 points: The guess correctly names the franchise, cinematic universe, or 
+      series, but misses the specific subtitle/sequel. This includes character 
+      or code names that denote the franchise (e.g., "Harry Potter" instead of 
+      "Harry Potter and the Goblet of Fire", or "007" / "James Bond" for "Dr. No").
     - 0 points: The guess is incorrect.
     
-    Return ONLY a raw JSON array of objects with the 'uid' and numeric 'score':
-    [{"uid": "...", "score": 100}]
+    Return ONLY a raw JSON array of objects with the 'uid', numeric 'score', and a brief string 'explanation' of your judgement:
+    [{"uid": "...", "score": 100, "explanation": "..."}]
   `;
+
+  console.log(`[JUDGE] Sending prompt to Gemini:\n${prompt}`);
 
   try {
     const response = await fetch(
@@ -145,6 +149,9 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
 
     const data = await response.json();
     let resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    console.log(`[JUDGE] Received response from Gemini:\n${resultText}`);
+    
     resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
     const result = JSON.parse(resultText);
     if (!Array.isArray(result)) throw new Error("Invalid response format");
@@ -152,12 +159,35 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
   } catch (e) {
     console.error("[JUDGE] Exception during batch verification:", e);
     const normalizedCorrect = correctMovie.toLowerCase().trim();
+    
+    // Explicit manual overrides for common edge cases in a fallback scenario
+    const hardcodedSynonyms = {
+      "dr. no": ["007", "james bond"],
+      "dexter's laboratory": ["dexter's lab"],
+      "star wars": ["empire strikes back", "a new hope", "return of the jedi"]
+    };
+
     return submissionsList.map(s => {
         const normalizedGuess = s.answer.toLowerCase().trim();
         let score = 0;
+        
+        // Exact substring match
         if (normalizedGuess.length > 2 && (normalizedCorrect.includes(normalizedGuess) || normalizedGuess.includes(normalizedCorrect))) {
             score = 100;
         }
+
+        // Custom aliases handling
+        for (const [key, synonyms] of Object.entries(hardcodedSynonyms)) {
+            if (normalizedCorrect.includes(key)) {
+                for (const syn of synonyms) {
+                  if (normalizedGuess.includes(syn) || syn.includes(normalizedGuess)) {
+                    // Give 50 for franchise if it's James Bond, or 100 for Dexter's Lab
+                    score = key === "dr. no" ? 50 : 100;
+                  }
+                }
+            }
+        }
+        
         return { uid: s.uid, score };
     });
   }
@@ -166,15 +196,20 @@ const verifyBatchAnswers = async (submissionsList, correctMovie, apiKey) => {
 const searchItunes = async (query) => {
   try {
     const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
+    if (!res.ok) throw new Error(`iTunes HTTP error: ${res.status}`);
     const data = await res.json();
     return data.results[0] || null;
   } catch (e) {
+    console.error("[ITUNES_API_ERROR]", e);
     return null;
   }
 };
 
 const searchMoviePoster = async (query, type = 'movie', year = null) => {
-  if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) return null;
+  if (!tmdbAccessToken || tmdbAccessToken.startsWith("REPLACE")) {
+    console.error("[TMDB_API_ERROR] Token is missing or invalid placeholder string.");
+    return null;
+  }
   try {
     const endpoint = type === 'tv' ? 'tv' : 'movie';
     let url = `https://api.themoviedb.org/3/search/${endpoint}?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`;
@@ -184,7 +219,7 @@ const searchMoviePoster = async (query, type = 'movie', year = null) => {
       method: 'GET',
       headers: { accept: 'application/json', Authorization: `Bearer ${tmdbAccessToken}` }
     });
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error(`TMDB HTTP error: ${res.status} - ${await res.text()}`);
     const data = await res.json();
     if (data.results && data.results.length > 0) {
         const sortedResults = data.results.sort((a, b) => b.popularity - a.popularity);
@@ -192,7 +227,10 @@ const searchMoviePoster = async (query, type = 'movie', year = null) => {
         if (bestResult.poster_path) return `https://image.tmdb.org/t/p/w780${bestResult.poster_path}`;
     }
     return null;
-  } catch (e) { return null; }
+  } catch (e) { 
+    console.error("[TMDB_API_ERROR]", e);
+    return null; 
+  }
 };
 
 // --- DRAWING COMPONENT ---
@@ -311,7 +349,7 @@ const Landing = ({ setMode, joinGame, hostGame }) => {
 const HostView = ({ gameId, user }) => {
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
-  const [category, setCategory] = useState("all_stars");
+  const [category, setCategory] = useState("all_time_scores");
   const [totalRounds, setTotalRounds] = useState(10);
   const [showSettings, setShowSettings] = useState(true);
   const [roundTimeLeft, setRoundTimeLeft] = useState(30);
@@ -596,7 +634,7 @@ const HostView = ({ gameId, user }) => {
           </div>
           <div className="mt-6">
              <label className="block text-sm font-bold mb-2 text-slate-400">CATEGORY</label>
-             <div className="grid grid-cols-2 gap-2 mb-4">{Object.keys(CATEGORIES).map(c => (<button key={c} onClick={() => setCategory(c)} className={`p-2 rounded capitalize font-bold text-xs md:text-sm ${category === c ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{c.replace('_', ' ')}</button>))}</div>
+             <div className="grid grid-cols-2 gap-2 mb-4">{Object.keys(CATEGORIES).map(c => (<button key={c} onClick={() => setCategory(c)} className={`p-2 rounded capitalize font-bold text-xs md:text-sm ${category === c ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{c.replace(/_/g, ' ')}</button>))}</div>
              <label className="block text-sm font-bold mb-2 text-slate-400">NUMBER OF SONGS</label>
              <div className="flex gap-2">{[10, 25, 50].map(num => (<button key={num} onClick={() => setTotalRounds(num)} className={`flex-1 p-2 rounded font-bold ${totalRounds === num ? 'bg-green-600 ring-2 ring-green-400' : 'bg-slate-700'}`}>{num}</button>))}</div>
           </div>
@@ -612,7 +650,7 @@ const HostView = ({ gameId, user }) => {
               {players.length === 0 && <div className="col-span-full text-slate-500 italic text-center py-4">Waiting for players to join...</div>}
             </div>
           </div>
-          <button onClick={startGame} disabled={players.length === 0} className="w-full py-4 mt-6 bg-green-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform">Start Game</button>
+          <button onClick={startGame} disabled={players.length === 0 || !category} className="w-full py-4 mt-6 bg-green-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform">Start Game</button>
         </div>
       </div>
     );
