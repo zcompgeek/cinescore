@@ -310,6 +310,7 @@ const HostView = ({ gameId, user }) => {
   const [players, setPlayers] = useState([]);
   const [category, setCategory] = useState("all_time_scores");
   const [totalRounds, setTotalRounds] = useState(10);
+  const [gameMode, setGameMode] = useState("competitive");
   const [showSettings, setShowSettings] = useState(true);
   const [roundTimeLeft, setRoundTimeLeft] = useState(30);
   const audioRef = useRef(null);
@@ -380,14 +381,18 @@ const HostView = ({ gameId, user }) => {
                   const uid = res.uid;
                   
                   // 1. Calculate Base Potential (Buzz Rank)
-                  const buzzIndex = sortedBuzzes.findIndex(b => b.uid === uid);
                   let basePoints = 0;
-                  if (buzzIndex !== -1) {
-                      // Start at 100, -10 per rank, min 50.
-                      basePoints = Math.max(50, 100 - (buzzIndex * 10));
+                  if (game.gameMode === 'chill' || game.gameMode === 'coop') {
+                      basePoints = 100;
                   } else {
-                      // Fallback if not in buzz list (shouldn't happen with correct flow)
-                      basePoints = 50;
+                      const buzzIndex = sortedBuzzes.findIndex(b => b.uid === uid);
+                      if (buzzIndex !== -1) {
+                          // Start at 100, -10 per rank, min 50.
+                          basePoints = Math.max(50, 100 - (buzzIndex * 10));
+                      } else {
+                          // Fallback if not in buzz list (shouldn't happen with correct flow)
+                          basePoints = 50;
+                      }
                   }
 
                   let finalScore = 0;
@@ -403,13 +408,13 @@ const HostView = ({ gameId, user }) => {
                       outcome = 'close';
                   } else {
                       // Wrong Answer: Penalty
-                      finalScore = -25;
+                      finalScore = (game.gameMode === 'chill' || game.gameMode === 'coop') ? 0 : -25;
                       outcome = 'wrong';
                   }
 
                   // 3. Apply Hint Penalty (25% off earned points)
                   const hasHint = game.hints?.[uid];
-                  if (hasHint && finalScore > 0) {
+                  if (hasHint && finalScore > 0 && game.gameMode !== 'chill') {
                       finalScore = Math.floor(finalScore * 0.75);
                   }
 
@@ -442,7 +447,8 @@ const HostView = ({ gameId, user }) => {
     const allProcessed = allParticipated && allSubs.every(s => s.status === 'verified');
     
     // Round ends if 3 correct, time up, or everyone done
-    if (correctCount >= 3 || timeUp || allProcessed) {
+    const isCoopSuccess = game?.gameMode === 'coop' && correctCount >= 1;
+    if (correctCount >= 3 || timeUp || allProcessed || isCoopSuccess) {
         const endRound = async () => {
              const finalResults = verifiedSubs.map(s => ({
                  uid: s.uid,
@@ -454,7 +460,8 @@ const HostView = ({ gameId, user }) => {
                 status: 'revealed',
                 lastRoundScore: 0, 
                 roundWinnerCount: correctCount,
-                roundResults: finalResults
+                roundResults: finalResults,
+                ...(game.gameMode === 'coop' && correctCount > 0 ? { groupScore: increment(1) } : {})
             });
         };
         endRound();
@@ -492,6 +499,7 @@ const HostView = ({ gameId, user }) => {
     const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
     batch.update(gameRef, {
       status: 'playing',
+      gameMode: gameMode,
       round: 1, 
       totalRounds: totalRounds,
       playedSongs: [ { title: trackData.title, artist: trackData.artist, movie: trackData.movie, coverArt } ], 
@@ -499,6 +507,7 @@ const HostView = ({ gameId, user }) => {
       buzzes: [],      
       submissions: {}, 
       hints: {},
+      groupScore: 0,
       currentSong: { ...trackData, previewUrl, coverArt },
       feedbackMessage: null,
       roundResults: [],
@@ -593,6 +602,16 @@ const HostView = ({ gameId, user }) => {
           <div className="mt-6">
              <label className="block text-sm font-bold mb-2 text-slate-400">CATEGORY</label>
              <div className="grid grid-cols-2 gap-2 mb-4">{Object.keys(CATEGORIES).map(c => (<button key={c} onClick={() => setCategory(c)} className={`p-2 rounded capitalize font-bold text-xs md:text-sm ${category === c ? 'bg-blue-600 ring-2 ring-blue-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{c.replace(/_/g, ' ')}</button>))}</div>
+             <label className="block text-sm font-bold mb-2 text-slate-400">GAME MODE</label>
+             <div className="flex gap-2 mb-4">
+                 {[
+                     { id: 'competitive', label: 'Competitive' },
+                     { id: 'coop', label: 'Cooperative' },
+                     { id: 'chill', label: 'Chill' }
+                 ].map(m => (
+                     <button key={m.id} onClick={() => setGameMode(m.id)} className={`flex-1 p-2 rounded font-bold transition-all ${gameMode === m.id ? 'bg-purple-600 ring-2 ring-purple-400' : 'bg-slate-700 hover:bg-slate-600'}`}>{m.label}</button>
+                 ))}
+             </div>
              <label className="block text-sm font-bold mb-2 text-slate-400">NUMBER OF SONGS</label>
              <div className="flex gap-2">{[10, 25, 50].map(num => (<button key={num} onClick={() => setTotalRounds(num)} className={`flex-1 p-2 rounded font-bold ${totalRounds === num ? 'bg-green-600 ring-2 ring-green-400' : 'bg-slate-700'}`}>{num}</button>))}</div>
           </div>
@@ -678,10 +697,23 @@ const HostView = ({ gameId, user }) => {
 
                    {game?.status === 'game_over' && (
                        <div className="bg-slate-900/90 p-6 md:p-8 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-sm animate-bounce-short">
-                           {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
-                           <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
-                           <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
-                           <div className="text-xl md:text-2xl mb-6 md:mb-8">Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span><div className="text-slate-400 text-lg">Score: {game.winner?.score}</div></div>
+                           {game.gameMode === 'coop' ? (
+                               <>
+                                   <Users size={60} className="text-blue-400 mx-auto mb-4 md:w-20 md:h-20" />
+                                   <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
+                                   <div className="text-xl md:text-2xl mb-6 md:mb-8">
+                                       Group Success: <span className="text-blue-400 font-bold">{Math.round((game.groupScore / game.totalRounds) * 100) || 0}%</span>
+                                       <div className="text-slate-400 text-lg">{game.groupScore || 0} out of {game.totalRounds} correct</div>
+                                   </div>
+                               </>
+                           ) : (
+                               <>
+                                   {game.winner?.avatar && <img src={game.winner.avatar} className="w-24 h-24 rounded-full border-4 border-yellow-500 mx-auto mb-4 object-cover bg-slate-800" />}
+                                   <Trophy size={60} className="text-yellow-400 mx-auto mb-4 md:w-20 md:h-20" />
+                                   <h1 className="text-3xl md:text-4xl font-black mb-2">GAME OVER</h1>
+                                   <div className="text-xl md:text-2xl mb-6 md:mb-8">Winner: <span className="text-yellow-400 font-bold">{game.winner?.username || "Unknown"}</span><div className="text-slate-400 text-lg">Score: {game.winner?.score}</div></div>
+                               </>
+                           )}
                            <button onClick={handleNewGame} className="px-6 py-3 md:px-8 md:py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 mx-auto"><RefreshCw size={20}/> Setup New Game</button>
                        </div>
                    )}
@@ -691,7 +723,9 @@ const HostView = ({ gameId, user }) => {
                         <Volume2 size={48} className="mb-4 md:w-16 md:h-16" />
                         <h2 className="text-2xl md:text-3xl font-bold">Listen Closely...</h2>
                         <div className="mt-4 flex gap-2">{game.skips?.length > 0 && (<span className="text-slate-400 text-sm">{game.skips.length} vote(s) to skip</span>)}</div>
-                        <div className="mt-4 text-xs text-slate-500">First 3 correct answers end the round!</div>
+                        <div className="mt-4 text-xs text-slate-500">
+                             {game.gameMode === 'coop' ? "First correct answer ends the round!" : "First 3 correct answers end the round!"}
+                        </div>
                      </div>
                    )}
 
@@ -703,7 +737,15 @@ const HostView = ({ gameId, user }) => {
                            <p className="text-blue-400 text-xl md:text-2xl font-bold">{game.currentSong?.title}</p>
                            <p className="text-slate-500 text-lg">{game.currentSong?.artist}</p>
                         </div>
-                        <div className="text-center mb-6"><p className="text-green-400 font-bold text-xl">{game.roundWinnerCount || 0} Correct Guesses!</p></div>
+                        <div className="text-center mb-6">
+                           {game.gameMode === 'coop' ? (
+                               <p className={`font-bold text-xl ${game.roundWinnerCount > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                   {game.roundWinnerCount > 0 ? "Team Guessed Correctly!" : "Team Missed!"}
+                               </p>
+                           ) : (
+                               <p className="text-green-400 font-bold text-xl">{game.roundWinnerCount || 0} Correct Guesses!</p>
+                           )}
+                        </div>
                         <button onClick={nextRound} className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-110 transition-transform flex items-center gap-2 mx-auto text-xl shadow-lg">Next Round <SkipForward size={24}/></button>
                      </div>
                    )}
@@ -860,6 +902,19 @@ const PlayerView = ({ gameId, user, username }) => {
                </div>
            );
        }
+       
+       if (game.gameMode === 'coop') {
+           return (
+               <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                   <Users size={80} className="text-blue-200 mb-6 animate-bounce md:w-32 md:h-32" />
+                   <h1 className="text-4xl md:text-6xl font-black mb-4 drop-shadow-xl">GAME OVER</h1>
+                   <div className="text-xl md:text-2xl font-bold bg-black/30 px-8 py-4 rounded-xl text-white mb-6">Group Score: {Math.round((game.groupScore / game.totalRounds) * 100) || 0}%</div>
+                   <div className="text-lg text-blue-200">You got {game.groupScore || 0} out of {game.totalRounds} correct.</div>
+                   <button onClick={() => setShowHistory(true)} className="mt-8 px-6 py-3 bg-black/20 hover:bg-black/40 rounded-full font-bold text-sm flex items-center gap-2 backdrop-blur-sm text-white"><Clock size={16}/> View Songs</button>
+               </div>
+           );
+       }
+
        const isWinner = game.winner?.uid === user.uid;
        if (isWinner) {
            return (
@@ -951,7 +1006,7 @@ const PlayerView = ({ gameId, user, username }) => {
         </div>
         
         <div className="mb-6 w-full max-w-md">
-             {!hintTaken ? (
+             {(!hintTaken && game.gameMode !== 'chill') ? (
                  <button onClick={takeHint} className="w-full py-3 border-2 border-dashed border-slate-600 text-slate-400 rounded-xl hover:border-yellow-500 hover:text-yellow-500 transition-colors flex items-center justify-center gap-2"><Lightbulb size={18} /> Need a Hint? (25% Penalty)</button>
              ) : (
                  <div className="w-full py-4 bg-yellow-900/30 border border-yellow-600/50 rounded-xl text-yellow-200 text-center animate-fade-in px-4"><div className="text-xs font-bold uppercase tracking-widest text-yellow-500 mb-1">HINT</div><div className="font-bold text-lg">{game.currentSong?.hint || "No hint available."}</div></div>
@@ -973,17 +1028,25 @@ const PlayerView = ({ gameId, user, username }) => {
     let msg = "DID NOT BUZZ";
     let color = "text-slate-400";
     
-    if (outcome === 'correct') { msg = `CORRECT! (+${score})`; color = "text-green-400"; }
-    else if (outcome === 'close') { msg = `CLOSE! (+${score})`; color = "text-yellow-400"; }
-    else if (outcome === 'wrong') { msg = `WRONG! (${score})`; color = "text-red-400"; }
-    else if (buzzedIn && !hasAnswered) { msg = "TIME UP!"; color = "text-red-400"; }
+    if (game.gameMode === 'coop') {
+        if (game.roundWinnerCount > 0) {
+            msg = "TEAM CORRECT!"; color = "text-green-400";
+        } else {
+            msg = "TEAM MISSED!"; color = "text-red-400";
+        }
+    } else {
+        if (outcome === 'correct') { msg = `CORRECT! (+${score})`; color = "text-green-400"; }
+        else if (outcome === 'close') { msg = `CLOSE! (+${score})`; color = "text-yellow-400"; }
+        else if (outcome === 'wrong') { msg = `WRONG! (${score})`; color = "text-red-400"; }
+        else if (buzzedIn && !hasAnswered) { msg = "TIME UP!"; color = "text-red-400"; }
+    }
     
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
          <div className="mb-6 relative w-full flex justify-center">
             <img src={game.currentSong?.coverArt || "https://placehold.co/400x400/1e293b/ffffff?text=Soundtrack"} className="max-h-[50vh] w-auto max-w-full rounded-xl shadow-2xl object-contain" />
             <div className="absolute -bottom-4 bg-blue-600 text-white p-3 rounded-full shadow-lg font-bold">
-               {game.lastRoundScore > 0 ? <Check size={24}/> : <X size={24}/>}
+               {((game.gameMode === 'coop' && game.roundWinnerCount > 0) || outcome === 'correct' || outcome === 'close') ? <Check size={24}/> : <X size={24}/>}
             </div>
          </div>
          <h2 className="text-2xl font-bold mb-1 text-white">{game.currentSong?.movie}</h2>
