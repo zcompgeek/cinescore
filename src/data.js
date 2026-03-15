@@ -36,7 +36,12 @@ export const CATEGORIES = {
       "hint": "Luke trains with Yoda on Dagobah.",
       "acceptableAnswers": [
         "the empire strikes back",
-        "empire strikes back"
+        "empire strikes back",
+        "star wars",
+        "episode 5",
+        "episode v",
+        "star wars episode 5",
+        "star wars episode v"
       ]
     },
     {
@@ -49,7 +54,11 @@ export const CATEGORIES = {
         "star wars: a new hope",
         "star wars",
         "a new hope",
-        "star wars a new hope"
+        "star wars a new hope",
+        "episode 4",
+        "episode iv",
+        "star wars episode 4",
+        "star wars episode iv"
       ]
     },
     {
@@ -62,7 +71,11 @@ export const CATEGORIES = {
         "star wars: the phantom menace",
         "star wars",
         "the phantom menace",
-        "star wars the phantom menace"
+        "star wars the phantom menace",
+        "episode 1",
+        "episode i",
+        "star wars episode 1",
+        "star wars episode i"
       ]
     },
     {
@@ -74,7 +87,12 @@ export const CATEGORIES = {
       "acceptableAnswers": [
         "harry potter and the sorcerer's stone",
         "harry potter",
-        "harry potter and the sorcerers stone"
+        "harry potter and the sorcerers stone",
+        "hp",
+        "hp1",
+        "harry potter 1",
+        "philosopher's stone",
+        "harry potter and the philosopher's stone"
       ]
     },
     {
@@ -86,7 +104,12 @@ export const CATEGORIES = {
       "acceptableAnswers": [
         "harry potter and the sorcerer's stone",
         "harry potter",
-        "harry potter and the sorcerers stone"
+        "harry potter and the sorcerers stone",
+        "hp",
+        "hp1",
+        "harry potter 1",
+        "philosopher's stone",
+        "harry potter and the philosopher's stone"
       ]
     },
     {
@@ -96,7 +119,9 @@ export const CATEGORIES = {
       "year": 1993,
       "hint": "Cloned dinosaurs escape on island.",
       "acceptableAnswers": [
-        "jurassic park"
+        "jurassic park",
+        "jp",
+        "jp1"
       ]
     },
     {
@@ -106,7 +131,9 @@ export const CATEGORIES = {
       "year": 1993,
       "hint": "Chaos theory mathematician visits park.",
       "acceptableAnswers": [
-        "jurassic park"
+        "jurassic park",
+        "jp",
+        "jp1"
       ]
     },
     {
@@ -128,7 +155,9 @@ export const CATEGORIES = {
       "hint": "Archaeologist races Nazis to Ark.",
       "acceptableAnswers": [
         "raiders of the lost ark",
-        "indiana jones"
+        "indiana jones",
+        "indiana jones and the raiders of the lost ark",
+        "indiana jones 1"
       ]
     },
     {
@@ -139,7 +168,9 @@ export const CATEGORIES = {
       "hint": "Indiana Jones hates snakes.",
       "acceptableAnswers": [
         "raiders of the lost ark",
-        "indiana jones"
+        "indiana jones",
+        "indiana jones and the raiders of the lost ark",
+        "indiana jones 1"
       ]
     },
     {
@@ -152,7 +183,8 @@ export const CATEGORIES = {
         "e.t. the extra-terrestrial",
         "e.t.",
         "et",
-        "et the extraterrestrial"
+        "et the extraterrestrial",
+        "e.t"
       ]
     },
     {
@@ -202,7 +234,9 @@ export const CATEGORIES = {
       "year": 1984,
       "hint": "Global athletic games in Los Angeles.",
       "acceptableAnswers": [
-        "1984 summer olympics"
+        "1984 summer olympics",
+        "olympics",
+        "the olympics"
       ]
     },
     {
@@ -552,7 +586,10 @@ export const CATEGORIES = {
         "lord of the rings: the fellowship of the ring",
         "the lord of the rings",
         "the fellowship of the ring",
-        "lotr"
+        "lotr",
+        "lord of the rings",
+        "lotr 1",
+        "the lord of the rings the fellowship of the ring"
       ]
     },
     {
@@ -566,7 +603,10 @@ export const CATEGORIES = {
         "lord of the rings: the fellowship of the ring",
         "the lord of the rings",
         "the fellowship of the ring",
-        "lotr"
+        "lotr",
+        "lord of the rings",
+        "lotr 1",
+        "the lord of the rings the fellowship of the ring"
       ]
     },
     {
@@ -580,7 +620,10 @@ export const CATEGORIES = {
         "lord of the rings: the two towers",
         "the lord of the rings",
         "the two towers",
-        "lotr"
+        "lotr",
+        "lord of the rings",
+        "lotr 2",
+        "the lord of the rings the two towers"
       ]
     },
     {
@@ -594,7 +637,10 @@ export const CATEGORIES = {
         "lord of the rings: the return of the king",
         "the lord of the rings",
         "the return of the king",
-        "lotr"
+        "lotr",
+        "lord of the rings",
+        "lotr 3",
+        "the lord of the rings the return of the king"
       ]
     },
     {
@@ -1238,7 +1284,9 @@ export const CATEGORIES = {
         "pirates of the caribbean: the curse of the black pearl",
         "pirates of the caribbean",
         "the curse of the black pearl",
-        "pirates of the caribbean the curse of the black pearl"
+        "pirates of the caribbean the curse of the black pearl",
+        "pirates of the caribbean 1",
+        "curse of the black pearl"
       ]
     },
     {
@@ -1251,7 +1299,9 @@ export const CATEGORIES = {
         "pirates of the caribbean: the curse of the black pearl",
         "pirates of the caribbean",
         "the curse of the black pearl",
-        "pirates of the caribbean the curse of the black pearl"
+        "pirates of the caribbean the curse of the black pearl",
+        "pirates of the caribbean 1",
+        "curse of the black pearl"
       ]
     },
     {
@@ -2858,7 +2908,9 @@ export const CATEGORIES = {
       "hint": "Princess calms giant Ohmu insects.",
       "acceptableAnswers": [
         "nausicaä of the valley of the wind",
-        "nausica of the valley of the wind"
+        "nausica of the valley of the wind",
+        "nausicaa",
+        "nausicaä"
       ]
     },
     {
@@ -4705,7 +4757,8 @@ export const CATEGORIES = {
       "hint": "Minnesota twins move to fancy zip code.",
       "acceptableAnswers": [
         "beverly hills, 90210",
-        "beverly hills 90210"
+        "beverly hills 90210",
+        "90210"
       ]
     },
     {
@@ -5374,7 +5427,10 @@ export const CATEGORIES = {
         "lord of the rings: the return of the king",
         "the lord of the rings",
         "the return of the king",
-        "lotr"
+        "lotr",
+        "lord of the rings",
+        "lotr 3",
+        "the lord of the rings the return of the king"
       ]
     },
     {
@@ -6127,7 +6183,9 @@ export const CATEGORIES = {
       "year": 1987,
       "hint": "Reptiles trained by rat fight Shredder.",
       "acceptableAnswers": [
-        "teenage mutant ninja turtles"
+        "teenage mutant ninja turtles",
+        "tmnt",
+        "ninja turtles"
       ]
     },
     {
@@ -6172,7 +6230,9 @@ export const CATEGORIES = {
         "batman: the animated series",
         "batman",
         "the animated series",
-        "batman the animated series"
+        "batman the animated series",
+        "btas",
+        "batman tas"
       ]
     },
     {
@@ -6637,7 +6697,8 @@ export const CATEGORIES = {
         "spider-man: the animated series",
         "spider-man",
         "the animated series",
-        "spiderman the animated series"
+        "spiderman the animated series",
+        "spiderman"
       ]
     },
     {

@@ -133,7 +133,7 @@ const verifyBatchAnswers = async (submissionsList, currentSong) => {
           const cleanAns = ans.replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
           const dist = levenshtein(cleanAns, cleanGuess);
           
-          if (dist <= 2) {
+          if (dist <= 3) {
               bestScore = 100;
               exp = `Matched acceptable answer: "${ans}"`;
               break; // max score
