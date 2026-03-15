@@ -640,12 +640,35 @@ const HostView = ({ gameId, user }) => {
                            <div className="flex flex-wrap justify-center gap-3">
                                {buzzes.map((b) => {
                                    const player = getPlayer(b.uid);
-                                   const hasSubmitted = submissions[b.uid]?.status === 'pending' || submissions[b.uid]?.status === 'verified';
+                                   const sub = submissions[b.uid];
+                                   const hasSubmitted = sub?.status === 'pending' || sub?.status === 'verified';
+                                   let bgClass = 'bg-slate-800/80';
+                                   let borderClass = 'border-yellow-500';
+                                   let Icon = null;
+                                   if (sub?.status === 'verified') {
+                                       if (sub.outcome === 'correct') {
+                                           bgClass = 'bg-green-600/50';
+                                           borderClass = 'border-green-400';
+                                           Icon = <Check size={16} className="text-green-400"/>;
+                                       } else if (sub.outcome === 'close') {
+                                           bgClass = 'bg-yellow-600/50';
+                                           borderClass = 'border-yellow-400';
+                                           Icon = <AlertCircle size={16} className="text-yellow-400"/>;
+                                       } else if (sub.outcome === 'wrong') {
+                                           bgClass = 'bg-red-900/50';
+                                           borderClass = 'border-red-500';
+                                           Icon = <X size={16} className="text-red-400"/>;
+                                       }
+                                   } else if (hasSubmitted) {
+                                       bgClass = 'bg-blue-600/50';
+                                       borderClass = 'border-blue-400';
+                                       Icon = <RefreshCw size={16} className="text-blue-400 animate-spin"/>;
+                                   }
                                    return (
-                                       <div key={b.uid} className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 ${hasSubmitted ? 'bg-green-600/50 border-green-400' : 'bg-slate-800/80 border-yellow-500'}`}>
+                                       <div key={b.uid} className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 ${bgClass} ${borderClass}`}>
                                            {player?.avatar ? <img src={player.avatar} className="w-8 h-8 rounded-full border border-white" /> : <div className="w-8 h-8 bg-white/20 rounded-full"/>}
                                            <span className="font-bold">{b.username}</span>
-                                           {hasSubmitted && <Check size={16} className="text-green-400"/>}
+                                           {Icon}
                                        </div>
                                    );
                                })}
@@ -872,9 +895,32 @@ const PlayerView = ({ gameId, user, username }) => {
         );
     }
     if (isWaiting) {
+        if (dbSubmission?.status === 'verified') {
+            const outcome = dbSubmission.outcome;
+            const score = dbSubmission.score || 0;
+            let msg = "Processing...";
+            let color = "text-slate-400";
+            if (outcome === 'correct') { msg = `CORRECT! (+${score})`; color = "text-green-400"; }
+            else if (outcome === 'close') { msg = `CLOSE! (+${score})`; color = "text-yellow-400"; }
+            else if (outcome === 'wrong') { msg = `WRONG! (${score})`; color = "text-red-400"; }
+            
+            return (
+                <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+                    <div className="flex flex-col items-center">
+                        {outcome === 'correct' && <Check size={48} className="mb-4 text-green-400" />}
+                        {outcome === 'close' && <AlertCircle size={48} className="mb-4 text-yellow-400" />}
+                        {outcome === 'wrong' && <X size={48} className="mb-4 text-red-500" />}
+                        <h2 className="text-2xl font-bold mb-4">Answer Verified</h2>
+                        <div className={`text-3xl md:text-4xl font-black ${color}`}>{msg}</div>
+                        <p className="mt-8 text-slate-400 animate-pulse">Waiting for round to end...</p>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
-                <div className="animate-pulse flex flex-col items-center"><Check size={48} className="mb-4 text-green-400" /><h2 className="text-2xl font-bold">Answer Submitted</h2><p className="text-slate-400">Waiting for results...</p></div>
+                <div className="animate-pulse flex flex-col items-center"><Check size={48} className="mb-4 text-green-400" /><h2 className="text-2xl font-bold">Answer Submitted</h2><p className="text-slate-400">Waiting for verification...</p></div>
             </div>
         );
     }
