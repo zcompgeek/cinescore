@@ -9,11 +9,42 @@ import { PlayerView } from './components/PlayerView';
 import { Volume2, Music, Trophy, Users, SkipForward, AlertCircle, Smartphone, Check, X, FastForward, RefreshCw, Star, Clock, ArrowLeft, ArrowRight, Lightbulb, Bell } from 'lucide-react';
 
 export default function App() {
+  const getInitialState = (key, defaultValue) => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+      console.warn(`Error reading localStorage key "${key}":`, error);
+      return defaultValue;
+    }
+  };
+
   const [user, setUser] = useState(null);
-  const [mode, setMode] = useState(null); 
-  const [gameId, setGameId] = useState(null);
-  const [username, setUsername] = useState("");
+  const [mode, setMode] = useState(() => getInitialState('cinescore_mode', null)); 
+  const [gameId, setGameId] = useState(() => getInitialState('cinescore_gameId', null));
+  const [username, setUsername] = useState(() => getInitialState('cinescore_username', ""));
   const [authError, setAuthError] = useState(null);
+
+  useEffect(() => {
+    try {
+      if (mode) window.localStorage.setItem('cinescore_mode', JSON.stringify(mode));
+      else window.localStorage.removeItem('cinescore_mode');
+    } catch(e) {}
+  }, [mode]);
+
+  useEffect(() => {
+    try {
+      if (gameId) window.localStorage.setItem('cinescore_gameId', JSON.stringify(gameId));
+      else window.localStorage.removeItem('cinescore_gameId');
+    } catch(e) {}
+  }, [gameId]);
+
+  useEffect(() => {
+    try {
+      if (username) window.localStorage.setItem('cinescore_username', JSON.stringify(username));
+      else window.localStorage.removeItem('cinescore_username');
+    } catch(e) {}
+  }, [username]);
 
   useEffect(() => {
     if (firebaseConfig.apiKey === "REPLACE_WITH_YOUR_API_KEY" && window.location.hostname !== 'localhost') { setAuthError("Configuration Missing"); return; }
