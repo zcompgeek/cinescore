@@ -27,6 +27,8 @@ export const PlayerView = ({ gameId, user, username }) => {
                  setBuzzedIn(false);
                  setTypingTime(30);
                  setAnswer("");
+             } else if (hasServerBuzz && !mySub && !buzzedIn) {
+                 setBuzzedIn(true);
              }
         }
         if (data.status === 'lobby') {

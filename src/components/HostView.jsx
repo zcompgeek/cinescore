@@ -17,10 +17,18 @@ export const HostView = ({ gameId, user }) => {
   const [roundTimeLeft, setRoundTimeLeft] = useState(30);
   const audioRef = useRef(null);
   const processingRef = useRef(new Set()); 
+  const initRef = useRef(false);
 
   useEffect(() => {
     const unsubGame = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), (docSnap) => {
-      if (docSnap.exists()) setGame(docSnap.data());
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setGame(data);
+        if (!initRef.current && data.status !== 'lobby') {
+          initRef.current = true;
+          setShowSettings(false);
+        }
+      }
     });
     const unsubPlayers = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'players'), (snap) => {
       const pList = [];
@@ -182,11 +190,12 @@ export const HostView = ({ gameId, user }) => {
         return;
     }
 
-    const allSongs = CATEGORIES[category];
+    const activeCategory = game?.category || category;
+    const allSongs = CATEGORIES[activeCategory];
     const playedSongs = game?.playedSongs || [];
     const usedTitles = playedSongs.map(s => (typeof s === 'string' ? s : s.title));
     const availableSongs = allSongs.filter(s => !usedTitles.includes(s.title));
-    const mediaType = (category === 'modern_tv' || category === 'classic_tv') ? 'tv' : 'movie';
+    const mediaType = (activeCategory === 'modern_tv' || activeCategory === 'classic_tv') ? 'tv' : 'movie';
     let selectedSong = null;
     let attempts = 0;
     while (!selectedSong && availableSongs.length > 0 && attempts < 5) {
@@ -258,6 +267,7 @@ export const HostView = ({ gameId, user }) => {
       status: 'playing',
       gameMode: gameMode,
       round: 1, 
+      category: category,
       totalRounds: totalRounds,
       playedSongs: [ { title: trackData.title, artist: trackData.artist, movie: trackData.movie, coverArt } ], 
       skips: [],
