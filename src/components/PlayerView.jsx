@@ -217,6 +217,15 @@ export const PlayerView = ({ gameId, user, username }) => {
           <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6">
             <Volume2 size={64} className="mb-8 text-blue-400 animate-pulse" />
             <h1 className="text-3xl md:text-4xl font-black text-white mb-8 text-center">Listen & Buzz In!</h1>
+            
+            <div className="mb-8 w-full max-w-md">
+                 {(!hintTaken && game.gameMode !== 'chill') ? (
+                     <button onClick={takeHint} className="w-full py-3 border-2 border-dashed border-slate-600 text-slate-400 rounded-xl hover:border-yellow-500 hover:text-yellow-500 transition-colors flex items-center justify-center gap-2"><Lightbulb size={18} /> Need a Hint? (25% Penalty)</button>
+                 ) : (
+                     <div className="w-full py-4 bg-yellow-900/30 border border-yellow-600/50 rounded-xl text-yellow-200 text-center animate-fade-in px-4"><div className="text-xs font-bold uppercase tracking-widest text-yellow-500 mb-1">HINT</div><div className="font-bold text-lg">{game.currentSong?.hint || "No hint available."}</div></div>
+                 )}
+            </div>
+
             <button 
                 onClick={buzzIn}
                 className="w-full max-w-sm aspect-square rounded-full bg-red-600 hover:bg-red-500 active:bg-red-700 border-8 border-red-800 shadow-2xl flex flex-col items-center justify-center transition-all active:scale-95"
@@ -237,13 +246,11 @@ export const PlayerView = ({ gameId, user, username }) => {
              <p className="text-slate-400 text-sm">Time to type!</p>
         </div>
         
-        <div className="mb-6 w-full max-w-md">
-             {(!hintTaken && game.gameMode !== 'chill') ? (
-                 <button onClick={takeHint} className="w-full py-3 border-2 border-dashed border-slate-600 text-slate-400 rounded-xl hover:border-yellow-500 hover:text-yellow-500 transition-colors flex items-center justify-center gap-2"><Lightbulb size={18} /> Need a Hint? (25% Penalty)</button>
-             ) : (
+        {(hintTaken || game.gameMode === 'chill') && (
+            <div className="mb-6 w-full max-w-md">
                  <div className="w-full py-4 bg-yellow-900/30 border border-yellow-600/50 rounded-xl text-yellow-200 text-center animate-fade-in px-4"><div className="text-xs font-bold uppercase tracking-widest text-yellow-500 mb-1">HINT</div><div className="font-bold text-lg">{game.currentSong?.hint || "No hint available."}</div></div>
-             )}
-        </div>
+            </div>
+        )}
 
         <div className="w-full max-w-4xl space-y-4">
            <input autoFocus className="w-full bg-white p-4 rounded-xl text-black text-xl font-bold text-center uppercase placeholder:text-gray-500 shadow-xl" placeholder="TYPE MOVIE TITLE HERE..." value={answer} onChange={e => setAnswer(e.target.value)} onKeyDown={e => e.key === 'Enter' && submitAnswer()} />
