@@ -1199,36 +1199,5 @@ export const animated_films = [
       "nausicaa",
       "nausicaä"
     ]
-  },
-  {
-    "title": "Country Roads",
-    "artist": "Yoko Honna",
-    "movie": "Whisper of the Heart",
-    "year": 1995,
-    "hint": "Girl writes story about cat baron.",
-    "acceptableAnswers": [
-      "whisper of the heart"
-    ]
-  },
-  {
-    "title": "Arrietty's Song",
-    "artist": "Cécile Corbel",
-    "movie": "The Secret World of Arrietty",
-    "year": 2010,
-    "hint": "Tiny people borrow human items.",
-    "acceptableAnswers": [
-      "the secret world of arrietty",
-      "secret world of arrietty"
-    ]
-  },
-  {
-    "title": "Fine On The Outside",
-    "artist": "Priscilla Ahn",
-    "movie": "When Marnie Was There",
-    "year": 2014,
-    "hint": "Girl befriends a ghost in mansion.",
-    "acceptableAnswers": [
-      "when marnie was there"
-    ]
   }
 ];

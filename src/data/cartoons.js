@@ -606,29 +606,6 @@ export const cartoons = [
     ]
   },
   {
-    "title": "She-Ra: Princess of Power Theme",
-    "artist": "Shuki Levy",
-    "movie": "She-Ra: Princess of Power",
-    "year": 1985,
-    "hint": "Adora fights the Evil Horde.",
-    "acceptableAnswers": [
-      "she-ra: princess of power",
-      "she-ra",
-      "princess of power",
-      "shera princess of power"
-    ]
-  },
-  {
-    "title": "Jem and the Holograms Theme",
-    "artist": "Kinder & Bryant",
-    "movie": "Jem",
-    "year": 1985,
-    "hint": "Music executive has secret rock persona.",
-    "acceptableAnswers": [
-      "jem"
-    ]
-  },
-  {
     "title": "My Little Pony: Friendship Is Magic Theme",
     "artist": "Daniel Ingram",
     "movie": "My Little Pony: Friendship Is Magic",

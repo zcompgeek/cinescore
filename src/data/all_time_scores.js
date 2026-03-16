@@ -434,16 +434,6 @@ export const all_time_scores = [
     ]
   },
   {
-    "title": "Chi Mai",
-    "artist": "Ennio Morricone",
-    "movie": "Le Professionnel",
-    "year": 1981,
-    "hint": "French agent betrayed by government.",
-    "acceptableAnswers": [
-      "le professionnel"
-    ]
-  },
-  {
     "title": "L'Arena",
     "artist": "Ennio Morricone",
     "movie": "Kill Bill: Vol. 2",
@@ -468,16 +458,6 @@ export const all_time_scores = [
     ]
   },
   {
-    "title": "Out of Africa",
-    "artist": "John Barry",
-    "movie": "Out of Africa",
-    "year": 1985,
-    "hint": "Baroness runs coffee plantation.",
-    "acceptableAnswers": [
-      "out of africa"
-    ]
-  },
-  {
     "title": "On Her Majesty's Secret Service",
     "artist": "John Barry",
     "movie": "On Her Majesty's Secret Service",
@@ -486,26 +466,6 @@ export const all_time_scores = [
     "acceptableAnswers": [
       "on her majesty's secret service",
       "on her majestys secret service"
-    ]
-  },
-  {
-    "title": "Midnight Cowboy",
-    "artist": "John Barry",
-    "movie": "Midnight Cowboy",
-    "year": 1969,
-    "hint": "Hustler and con man in NYC.",
-    "acceptableAnswers": [
-      "midnight cowboy"
-    ]
-  },
-  {
-    "title": "Somewhere in Time",
-    "artist": "John Barry",
-    "movie": "Somewhere in Time",
-    "year": 1980,
-    "hint": "Playwright uses hypnosis to time travel.",
-    "acceptableAnswers": [
-      "somewhere in time"
     ]
   },
   {

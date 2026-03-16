@@ -406,18 +406,6 @@ export const movie_soundtracks = [
     ]
   },
   {
-    "title": "Knockin' on Heaven's Door",
-    "artist": "Bob Dylan",
-    "movie": "Pat Garrett & Billy the Kid",
-    "year": 1973,
-    "hint": "Lawman hunts down his old friend.",
-    "acceptableAnswers": [
-      "pat garrett & billy the kid",
-      "pat garrett billy the kid",
-      "pat garrett & billy"
-    ]
-  },
-  {
     "title": "Fight the Power",
     "artist": "Public Enemy",
     "movie": "Do the Right Thing",
@@ -560,17 +548,6 @@ export const movie_soundtracks = [
     "hint": "Gen X friends struggle after college.",
     "acceptableAnswers": [
       "reality bites"
-    ]
-  },
-  {
-    "title": "Regulate",
-    "artist": "Warren G",
-    "movie": "Above the Rim",
-    "year": 1994,
-    "hint": "High school basketball star faces gangs.",
-    "acceptableAnswers": [
-      "above the rim",
-      "above"
     ]
   },
   {
@@ -720,26 +697,6 @@ export const movie_soundtracks = [
     ]
   },
   {
-    "title": "Theme from Shaft",
-    "artist": "Isaac Hayes",
-    "movie": "Shaft",
-    "year": 1971,
-    "hint": "Black private dick battles mob.",
-    "acceptableAnswers": [
-      "shaft"
-    ]
-  },
-  {
-    "title": "Superfly",
-    "artist": "Curtis Mayfield",
-    "movie": "Superfly",
-    "year": 1972,
-    "hint": "Cocaine dealer tries to quit business.",
-    "acceptableAnswers": [
-      "superfly"
-    ]
-  },
-  {
     "title": "Across 110th Street",
     "artist": "Bobby Womack",
     "movie": "Jackie Brown",
@@ -760,16 +717,6 @@ export const movie_soundtracks = [
       "butch cassidy",
       "sundance kid",
       "butch cassidy and"
-    ]
-  },
-  {
-    "title": "Everybody's Talkin'",
-    "artist": "Harry Nilsson",
-    "movie": "Midnight Cowboy",
-    "year": 1969,
-    "hint": "Texan dishwasher becomes gigolo in NYC.",
-    "acceptableAnswers": [
-      "midnight cowboy"
     ]
   },
   {
@@ -800,17 +747,6 @@ export const movie_soundtracks = [
     "hint": "Steel mill worker dances at night.",
     "acceptableAnswers": [
       "flashdance"
-    ]
-  },
-  {
-    "title": "Up Where We Belong",
-    "artist": "Joe Cocker & Jennifer Warnes",
-    "movie": "An Officer and a Gentleman",
-    "year": 1982,
-    "hint": "Navy aviation candidate fights drill sergeant.",
-    "acceptableAnswers": [
-      "an officer and a gentleman",
-      "officer and a gentleman"
     ]
   },
   {
@@ -879,16 +815,6 @@ export const movie_soundtracks = [
     ]
   },
   {
-    "title": "Diamonds Are a Girl's Best Friend",
-    "artist": "Marilyn Monroe",
-    "movie": "Gentlemen Prefer Blondes",
-    "year": 1953,
-    "hint": "Showgirls seek rich husbands in Paris.",
-    "acceptableAnswers": [
-      "gentlemen prefer blondes"
-    ]
-  },
-  {
     "title": "Supercalifragilisticexpialidocious",
     "artist": "Julie Andrews",
     "movie": "Mary Poppins",
@@ -926,16 +852,6 @@ export const movie_soundtracks = [
     "hint": "The Kid navigates Minneapolis music scene.",
     "acceptableAnswers": [
       "purple rain"
-    ]
-  },
-  {
-    "title": "On the Road Again",
-    "artist": "Willie Nelson",
-    "movie": "Honeysuckle Rose",
-    "year": 1980,
-    "hint": "Country singer struggles with family life.",
-    "acceptableAnswers": [
-      "honeysuckle rose"
     ]
   },
   {
